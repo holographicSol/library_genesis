@@ -54,7 +54,7 @@ I will add more.
 Python 3.10.1
 (Requires my modified version of pylibgen module).
 
-![Alt text](/Screenshot 2022-10-02 070931.png)
+![Alt text]('/Screenshot 2022-10-02 070931.png')
 
-![Alt text](/Screenshot 2022-10-02 071003.png)
+![Alt text]('/Screenshot 2022-10-02 071003.png')
 
