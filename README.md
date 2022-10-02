@@ -49,4 +49,7 @@ war
 
 wikileaks
 
-I will add more. (Requires my modified version of pylibgen module).
+I will add more.
+
+Python 3.10.1
+(Requires my modified version of pylibgen module).
