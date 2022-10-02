@@ -83,41 +83,50 @@ def dl_books(f_dir, lookup_ids):
             rHead = requests.get(url)
             data = rHead.text
             soup = BeautifulSoup(data, "html.parser")
-            cloud_flare_found = False
+            ext = ''
             for link in soup.find_all('a'):
                 href = (link.get('href'))
-                if href.endswith(tuple(['.pdf', '.djvu', '.ebub', '.azw3', '.mobi'])):
 
-                    if href.endswith('.pdf'):
-                        ext = '.pdf'
-                    elif href.endswith('.djvu'):
-                        ext = '.djvu'
-                    elif href.endswith('.ebub'):
-                        ext = '.ebub'
-                    elif href.endswith('.azw3'):
-                        ext = '.azw3'
-                    elif href.endswith('.mobi'):
-                        ext = '.mobi'
+                # if 'cloudflare' in href:
 
-                    print('download:', href)
+                if href.endswith('.pdf'):
+                    ext = '.pdf'
+                    break
+                elif href.endswith('.djvu'):
+                    ext = '.djvu'
+                    break
+                elif href.endswith('.epub'):
+                    ext = '.epub'
+                    break
+                elif href.endswith('.azw3'):
+                    ext = '.azw3'
+                    break
+                elif href.endswith('.mobi'):
+                    ext = '.mobi'
+                    break
+                else:
+                    print('unhandled href:', href)
 
-                    if 'cloudflare' in href or 'http://library.lol/' in href:
-                        print('extension:', ext)
-                        print('download:', href)
+            if ext:
+                print('extension:', ext)
+                print('download:', href)
 
-                        save_path = f_dir + "".join([c for c in title if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
-                        save_path = save_path + ' (by ' + "".join([c for c in author if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
-                        save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')' + ext
+                save_path = f_dir + "".join([c for c in title if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
+                save_path = save_path + ' (by ' + "".join([c for c in author if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
+                save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')' + ext
 
-                        if not os.path.exists(save_path):
-                            print('saving file:', save_path)
-                            try:
-                                urllib.request.urlretrieve(href, save_path)
-                            except Exception as e:
-                                print(e)
-                                failed.append([title, author, year, href])
-                        else:
-                            print('-- skipping:', href)
+                if not os.path.exists(save_path):
+                    if href.endswith(tuple(['.pdf', '.djvu', '.epub', '.azw3', '.mobi'])):
+                        print('saving file:', save_path)
+                        try:
+                            urllib.request.urlretrieve(href, save_path)
+                        except Exception as e:
+                            print(e)
+                            failed.append([title, author, year, href])
+                else:
+                    print('-- skipping:', href)
+            else:
+                failed.append([title, author, year, href])
 
         except Exception as e:
             print(e)
