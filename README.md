@@ -54,8 +54,3 @@ I will add more.
 Python 3.10.1
 (Requires my modified version of pylibgen module).
 
-![ScreenShot](Screenshot 2022-10-02 070931.png)
-
-
-![ScreenShot](Screenshot 2022-10-02 071003.png)
-
