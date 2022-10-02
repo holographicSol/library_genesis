@@ -87,8 +87,6 @@ def dl_books(f_dir, lookup_ids):
             for link in soup.find_all('a'):
                 href = (link.get('href'))
 
-                # if 'cloudflare' in href:
-
                 if href.endswith('.pdf'):
                     ext = '.pdf'
                     break
