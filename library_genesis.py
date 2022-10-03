@@ -21,6 +21,7 @@ def banner():
 
 def compile_ids(dl_method, search_q, i_page):
     global ids_
+    ids_ = []
     f_dir = './library_genesis/' + search_q + '/'
 
     # every page
