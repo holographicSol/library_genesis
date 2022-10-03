@@ -22,3 +22,10 @@ Uses my modified pylibgen module with my modified pylibgen constants.py file:
 Copy and paste modified pylibgen.py and constants.py into python directory where applicable.
 
 Non developers may use library_genesis.exe. (portable).
+
+I aslo highly recommend kiwix_serve.exe from:
+https://www.kiwix.org/en/downloads/kiwix-serve/
+
+And zim files to compliment kiwix-serve:
+https://download.kiwix.org/zim/
+
