@@ -11,6 +11,10 @@ import urllib.request
 failed = []
 ids_ = []
 search_q = ''
+page_max = 0
+dl_method = ''
+update_max = 0
+i_update = 0
 
 
 def banner():
@@ -19,86 +23,101 @@ def banner():
     print('')
 
 
-def compile_ids(dl_method, search_q, i_page):
+def enumerate():
+    # every page
+    global page_max, search_q
+    i_page = 1
+    add_page = True
+    ids_n = []
+    while add_page is True:
+        ids = []
+        library_ = Library()
+        try:
+            ids = library_.search(query=search_q, mode='title', page=i_page, per_page=100)
+            print('[PAGE]', i_page)
+            print('[BOOK IDs]', ids)
+            for _ in ids:
+                if _ not in ids_:
+                    ids_n.append(_)
+        except:
+            add_page = False
+        if not ids:
+            add_page = False
+        else:
+            page_max += 1
+            i_page += 1
+    print('-' * 100)
+    print('[KEYWORD]', search_q)
+    print('[BOOKS]', len(ids_n))
+    print('-' * 100)
+
+
+def compile_ids(search_q, i_page):
     global ids_
     ids_ = []
     f_dir = './library_genesis/' + search_q + '/'
 
-    # every page
-    if dl_method == 'all' or dl_method == 'all_update':
-        add_page = True
-        while add_page is True:
-            ids = []
-            library_ = Library()
-            try:
-                ids = library_.search(query=search_q, mode='title', page=i_page, per_page=100)
-                print('[page:', i_page, '] book IDs:', ids)
-                for _ in ids:
-                    if _ not in ids_:
-                        ids_.append(_)
-            except:
-                add_page = False
-            if not ids:
-                add_page = False
-            else:
-                i_page += 1
+    library_ = Library()
+    try:
+        ids = library_.search(query=search_q, mode='title', page=i_page, per_page=100)
+        print('[PAGE]', i_page)
+        print('[BOOK IDs]', ids)
+        ids_ = ids
 
-    # specific page
-    elif dl_method == 'page':
-        library_ = Library()
-        try:
-            ids = library_.search(query=search_q, mode='title', page=i_page, per_page=100)
-            print('[page:', i_page, '] book IDs:', ids)
-            ids_ = ids
-
-        except Exception as e:
-            print(e)
+    except Exception as e:
+        print(e)
 
     lookup_ids = library_.lookup(ids_)
-    print('found:', len(ids_), 'books')
+    print('-' * 100)
+    print('[PAGE]', i_page)
+    print('[BOOKS]', len(ids_))
+    print('-' * 100)
 
     if ids_:
-        if dl_method != 'all_update':
-            user_dl_books = input('would you like to download?(y/n): ')
-        else:
-            user_dl_books = 'y'
-        if user_dl_books == 'y' or user_dl_books == 'Y':
-            if not os.path.exists(f_dir):
-                os.mkdir(f_dir)
-            dl_books(f_dir, lookup_ids)
+
+        if not os.path.exists(f_dir):
+            os.mkdir(f_dir)
+        dl_books(search_q, f_dir, lookup_ids)
 
 
-def dl_books(f_dir, lookup_ids):
-    global ids_
+def dl_books(search_q, f_dir, lookup_ids):
+    global ids_, dl_method, i_update
     i = 0
+    i_update += 1
     for _ in lookup_ids:
         try:
             i += 1
             print('-' * 100)
-            print('progress:', i, '/', len(ids_))
+            if dl_method == 'keyword':
+                print('[PAGE]', i_page, '/', page_max)
+                print('[PROGRESS]', i, '/', len(ids_))
+            elif dl_method == 'update':
+                print('[UPDATE]', search_q)
+                print('[PROGRESS]', i_update, '/', update_max)
+
             # print(_.__dict__)
 
             title = _.title
             if title == '':
                 title = str(i) + '_unknown_title'
-            print('title:', _.title)
+            print('[TITLE]', _.title)
 
             author = _.author
             if author == '':
                 author = str(i) + '_unknown_author'
-            print('author:', _.author)
+            print('[AUTHOR]', _.author)
 
             year = _.year
             if not year:
                 year = ''
-            print('year:', _.year)
+            print('[YEAR]', _.year)
 
             md5 = _.md5
             if md5 == '':
                 print('-- could not find md5, skipping')
                 failed.append([title, author, year])
                 break
-            print('md5:', _.md5)
+            print('[md5]', _.md5)
 
             url = ('http://library.lol/main/' + str(md5))
             rHead = requests.get(url)
@@ -124,25 +143,25 @@ def dl_books(f_dir, lookup_ids):
                     ext = '.mobi'
                     break
                 else:
-                    print('unhandled href:', href)
+                    print('[UNHANDLED HREF]', href)
 
             if ext:
-                print('extension:', ext)
-                print('download:', href)
+                print('[EXTENSION]', ext)
+                # print('download:', href)
 
                 save_path = f_dir + "".join([c for c in title if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                 save_path = save_path + ' (by ' + "".join([c for c in author if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                 save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')' + ext
 
                 if not os.path.exists(save_path):
-                    print('saving file:', save_path)
+                    print('[SAVING]', save_path)
                     try:
                         urllib.request.urlretrieve(href, save_path)
                     except Exception as e:
                         print(e)
                         failed.append([title, author, year, href])
                 else:
-                    print('-- skipping:', href)
+                    print('[SKIPPING]')
             else:
                 failed.append([title, author, year, href])
 
@@ -158,22 +177,22 @@ def dl_books(f_dir, lookup_ids):
 if len(sys.argv) == 2 and sys.argv[1] == '-h':
     banner()
     print('    Intended as an intelligence tool for archiving information in an uncertain world.')
+    print('    Downloads every book on every page for keyword specified.')
     print('    Written by Benjamin Jack Cullen.')
     print('')
     print('Command line arguments:\n')
     print('    -h      Displays this help message.')
-    print('    --all   Searches every page.')
-    print('    --page  Specify page number. (Use if page quantity exceeds a max using --all, instead use --page).')
-    print('    -k      Keyword. Specify keyword(s) to search for.')
+    print('    -k      Keyword. Specify keyword(s).')
     print('    -u      Update. Update an existing library genesis directory.')
+    print('            Each directory name in an existing ./library_genesis directory will')
+    print('            be used as a keyword during update process.')
     print('')
-    print('    Example: library_genesis --all -k human')
-    print('    Example: library_genesis --page 1 -k human')
+    print('    Example: library_genesis -k human')
+    print('    Example: library_genesis -u')
     print('')
 
 # Parse arguments
 run_function = ()
-search_q = ''
 i = 0
 for _ in sys.argv:
 
@@ -193,60 +212,47 @@ for _ in sys.argv:
 
     # update
     elif _ == '-u':
-        banner()
-        print('[Update Library]')
-        search_q = []
-        for dirname, dirnames, filenames in os.walk('./library_genesis'):
-            for subdirname in dirnames:
-                fullpath = os.path.join(subdirname)
-                search_q.append(fullpath)
-                print('    [update]', fullpath)
-        dl_method = 'all_update'
-        i_query = 0
-        for _ in search_q:
-            i_page = 1
-            print('[updating]', _)
-            compile_ids(dl_method, search_q[i_query], i_page)
-            i_query += 1
+        run_function = 1
         break
     i += 1
 
-# Function selection
+# Keyword download
 if run_function == 0:
-    i = 0
-    for _ in sys.argv:
-
-        dl_method = ''
-
-        # every page
-        if _ == '--all':
-            dl_method = 'all'
-            i_page = 1
-            break
-
-        # specific page
-        elif _ == '--page':
-            dl_method = 'page'
-            i_page = int(sys.argv[i + 1])
-            print('Page:', i_page)
-            break
-
-        i += 1
-
-    if dl_method:
-        search_q = search_q.strip()
-        compile_ids(dl_method, search_q, i_page)
-
-        # Summary
-        print('')
-        print('-' * 100)
-        if failed:
-            print('\nmay have failed (check to confirm):')
-            for _ in failed:
-                print('   ', _)
-            print('may have failed:', len(failed))
-
-        print('-- completed.')
+    search_q = search_q.strip()
+    enumerate()
+    if page_max >= 1:
+        dl_method = 'keyword'
+        i_page = 1
+        while i_page < page_max:
+            compile_ids(search_q, i_page)
+            i_page += 1
+    print('')
+    print('-' * 100)
+    if failed:
+        print('\nmay have failed (check to confirm):')
+        for _ in failed:
+            print('   ', _)
+        print('may have failed:', len(failed))
     else:
         print('-- use -h for help.')
+    print('-- completed.')
+
+elif run_function == 1:
+    banner()
+    print('[Update Library]')
+    update_max = 0
+    search_q = []
+    for dirname, dirnames, filenames in os.walk('./library_genesis'):
+        for subdirname in dirnames:
+            fullpath = os.path.join(subdirname)
+            search_q.append(fullpath)
+            print('    [update]', fullpath)
+            update_max += 1
+    i_query = 0
+    dl_method = 'update'
+    for _ in search_q:
+        i_page = 1
+        print('[updating]', _)
+        compile_ids(search_q[i_query], i_page)
+        i_query += 1
 print('\n\n')

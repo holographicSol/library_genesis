@@ -1,18 +1,19 @@
 [LIBRARY GENESIS DOWNLOAD TOOL]
 
 Intended as an intelligence tool for archiving information in an uncertain world.
+Downloads every book on every page for keyword specified.
 Written by Benjamin Jack Cullen.
 
 Command line arguments:
 
 -h      Displays this help message.
---all   Searches every page.
---page  Specify page number. (Use if page quantity exceeds a max using --all, instead use --page).
--k      Keyword. Specify keyword(s) to search for.
+-k      Keyword. Specify keyword(s).
 -u      Update. Update an existing library genesis directory.
+        Each directory name in an existing ./library_genesis directory will
+        be used as a keyword during update process.
 
-Example: library_genesis --all -k human
-Example: library_genesis --page 1 -k human
+Example: library_genesis -k human
+Example: library_genesis -u
 
 
 Requirements:
