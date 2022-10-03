@@ -18,7 +18,7 @@ Example: library_genesis --page 1 -k human
 Requirements:
 Developed and tested against Python 3.10.1 on Windows 10.
 
-Uses my modified pylibgen module with pylibgen my modified constants.py:
+Uses my modified pylibgen module with my modified pylibgen constants.py file:
 Copy and paste modified pylibgen into python directory where applicable.
 
 Non developers may use library_genesis.exe. (portable).
