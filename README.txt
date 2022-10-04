@@ -11,8 +11,10 @@ Command line arguments:
 -u      Update. Update an existing library genesis directory.
         Each directory name in an existing ./library_genesis directory will
         be used as a keyword during update process.
+-p      Page. Specify start page number.
 
 Example: library_genesis -k human
+Example: library_genesis -p 3 -k human
 Example: library_genesis -u
 
 
