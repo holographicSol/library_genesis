@@ -37,4 +37,4 @@ Query:
 
 create_sol_library.py:
     Intended for use with kiwix. Runs kiwix manage as a subprocess to auto compile a library.xml from a bag
-    of ZIM files.
+    of ZIM files. The compiled .xml file can then be used with kiwix serve.
