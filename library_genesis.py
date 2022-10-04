@@ -8,6 +8,9 @@ import requests
 from bs4 import BeautifulSoup
 import urllib.request
 import urllib3
+import socket
+import unicodedata
+import sol_ext
 
 failed = []
 ids_ = []
@@ -18,6 +21,14 @@ update_max = 0
 i_update = 0
 start_page = False
 i_page = 1
+
+
+def NFD(text):
+    return unicodedata.normalize('NFD', text)
+
+
+def noCase(text):
+    return NFD(NFD(text).casefold())
 
 
 def banner():
@@ -133,29 +144,18 @@ def dl_books(search_q, f_dir, lookup_ids):
             ext = ''
             for link in soup.find_all('a'):
                 href = (link.get('href'))
-                if href.endswith('.pdf'):
-                    ext = '.pdf'
-                    break
-                elif href.endswith('.epub'):
-                    ext = '.epub'
-                    break
-                elif href.endswith('.djvu'):
-                    ext = '.djvu'
-                    break
-                elif href.endswith('.azw3'):
-                    ext = '.azw3'
-                    break
-                elif href.endswith('.mobi'):
-                    ext = '.mobi'
-                    break
-                elif href.endswith('.rar'):
-                    ext = '.rar'
-                    break
-                elif href.endswith('.cbr'):
-                    ext = '.cbr'
-                    break
-                else:
-                    print('[UNHANDLED HREF]', href)
+                idx = str(href).rfind('.')
+                _ext_ = str(href)[idx:]
+                # Art and Armenian Propaganda Ararat As A Case Study (by Sedat Laçiner Şenol Kantarcı 2002)
+                for _ in sol_ext.ext_:
+                    # print('comparing:', _ext_, '--> list item:', str(_).strip().lower())
+                    if not _ == '.html':
+                        if str(noCase(_ext_).strip()) == '.' + str(_).strip().lower():
+                            ext = '.' + str(_.lower())
+                            print('[HREF]', href)
+                            break
+                break
+
             # http://library.lol/covers/183000/9859fc9115a0b616218bcaa692ca87ca-d.jpg
             img_ = ''
             for link in soup.find_all('img'):
@@ -164,6 +164,7 @@ def dl_books(search_q, f_dir, lookup_ids):
                     if src.endswith('.jpg'):
                         print('[IMAGE]', src)
                         img_ = 'http://library.lol/' + src
+                        break
 
             if ext:
                 print('[EXTENSION]', ext)
@@ -172,10 +173,16 @@ def dl_books(search_q, f_dir, lookup_ids):
                 save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')' + ext
                 save_path_img = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ').jpg'
 
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+                    'Accept-Encoding': 'text/plain',
+                    'Accept-Language': 'en-US,en;q=0.9'
+                    }
                 if not os.path.exists(save_path_img):
                     print('[SAVING]', save_path_img)
                     http = urllib3.PoolManager()
-                    r = http.request('GET', img_, preload_content=False)
+                    r = http.request('GET', img_, preload_content=False, headers=headers)
                     with open(save_path_img, 'wb') as out:
                         while True:
                             data = r.read(1000000000)
@@ -188,7 +195,8 @@ def dl_books(search_q, f_dir, lookup_ids):
                     print('[SAVING]', save_path)
                     try:
                         http = urllib3.PoolManager()
-                        r = http.request('GET', href, preload_content=False)
+                        r = http.request('GET', href, preload_content=False, headers=headers)
+
                         with open(save_path, 'wb') as out:
                             while True:
                                 data = r.read(int(filesize))
