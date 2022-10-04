@@ -111,7 +111,7 @@ def dl_books(search_q, f_dir, lookup_ids):
             print('[AUTHOR]', author)
 
             year = _.year
-            if not year:
+            if year == '0':
                 year = ''
             print('[YEAR]', year)
 
@@ -124,7 +124,7 @@ def dl_books(search_q, f_dir, lookup_ids):
                 failed.append([title, author, year])
                 break
             print('[md5]', md5)
-            
+
             url = ('http://library.lol/main/' + str(md5))
             rHead = requests.get(url)
             data = rHead.text
@@ -151,13 +151,39 @@ def dl_books(search_q, f_dir, lookup_ids):
                 elif href.endswith('.rar'):
                     ext = '.rar'
                     break
+                elif href.endswith('.cbr'):
+                    ext = '.cbr'
+                    break
                 else:
                     print('[UNHANDLED HREF]', href)
+            # http://library.lol/covers/183000/9859fc9115a0b616218bcaa692ca87ca-d.jpg
+            img_ = ''
+            for link in soup.find_all('img'):
+                src = (link.get('src'))
+                if src:
+                    if src.endswith('.jpg'):
+                        print('[IMAGE]', src)
+                        img_ = 'http://library.lol/' + src
+
             if ext:
                 print('[EXTENSION]', ext)
                 save_path = f_dir + "".join([c for c in title if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                 save_path = save_path + ' (by ' + "".join([c for c in author if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                 save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')' + ext
+                save_path_img = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ').jpg'
+
+                if not os.path.exists(save_path_img):
+                    print('[SAVING]', save_path_img)
+                    http = urllib3.PoolManager()
+                    r = http.request('GET', img_, preload_content=False)
+                    with open(save_path_img, 'wb') as out:
+                        while True:
+                            data = r.read(1000000000)
+                            if not data:
+                                break
+                            out.write(data)
+                    r.release_conn()
+
                 if not os.path.exists(save_path):
                     print('[SAVING]', save_path)
                     try:
