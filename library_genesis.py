@@ -1,6 +1,7 @@
 """
 Written by Benjamin Jack Cullen aka Holographic_Sol
 """
+import datetime
 import os
 import sys
 from pylibgen import Library
@@ -27,6 +28,12 @@ info = subprocess.STARTUPINFO()
 info.dwFlags = 1
 info.wShowWindow = 0
 main_pid = int()
+
+
+def get_dt():
+    dt = datetime.datetime.now()
+    dt = '[' + str(dt) + '] '
+    return dt
 
 
 def NFD(text):
@@ -61,8 +68,8 @@ def enumerate():
         library_ = Library()
         try:
             ids = library_.search(query=search_q, mode='title', page=i_page, per_page=100)
-            print('[PAGE]', i_page)
-            print('[BOOK IDs]', ids)
+            print(get_dt() + '[PAGE] ' + str(i_page))
+            print(get_dt() + '[BOOK IDs] ' + str(ids))
             for _ in ids:
                 if _ not in ids_:
                     ids_n.append(_)
@@ -74,8 +81,8 @@ def enumerate():
             page_max += 1
             i_page += 1
     print('-' * 100)
-    print('[KEYWORD]', search_q)
-    print('[BOOKS]', len(ids_n))
+    print(get_dt() + '[KEYWORD] ' + str(search_q))
+    print(get_dt() + '[BOOKS] ' + str(len(ids_n)))
     print('-' * 100)
 
 
@@ -87,17 +94,17 @@ def compile_ids(search_q, i_page):
     library_ = Library()
     try:
         ids = library_.search(query=search_q, mode='title', page=i_page, per_page=100)
-        print('[PAGE]', i_page)
-        print('[BOOK IDs]', ids)
+        print(get_dt() + '[PAGE] ' + str(i_page))
+        print(get_dt() + '[BOOK IDs] ' + str(ids))
         ids_ = ids
 
     except Exception as e:
-        print(e)
+        print(get_dt() + str(e))
 
     lookup_ids = library_.lookup(ids_)
     print('-' * 100)
-    print('[PAGE]', i_page)
-    print('[BOOKS]', len(ids_))
+    print(get_dt() + '[PAGE] ' + str(i_page))
+    print(get_dt() + '[BOOKS] ' + str(len(ids_)))
     print('-' * 100)
 
     if ids_:
@@ -116,41 +123,41 @@ def dl_books(search_q, f_dir, lookup_ids):
             i += 1
             print('-' * 100)
             if dl_method == 'keyword':
-                print('[PAGE]', i_page, '/', page_max)
-                print('[PROGRESS]', i, '/', len(ids_))
+                print(get_dt() + '[PAGE] ' + str(i_page) + ' / ' + str(page_max))
+                print(get_dt() + '[PROGRESS] ' + str(i) + ' / ' + str(len(ids_)))
             elif dl_method == 'update':
-                print('[UPDATE]', search_q)
-                print('[PROGRESS]', i_update, '/', update_max)
+                print(get_dt() + '[UPDATE] ' + str(search_q))
+                print(get_dt() + '[PROGRESS] ' + str(i_update) + ' / ' + str(update_max))
 
             # print(_.__dict__)
 
             title = _.title
             if title == '':
                 title = str(i) + '_unknown_title'
-            print('[TITLE]', title)
+            print(get_dt() + '[TITLE] ' + str(title))
 
             author = _.author
             if author == '':
                 author = str(i) + '_unknown_author'
-            print('[AUTHOR]', author)
+            print(get_dt() + '[AUTHOR] ' + str(author))
 
             year = _.year
             if year == '0':
                 year = ''
-            print('[YEAR]', year)
+            print(get_dt() + '[YEAR] ' + str(year))
 
             filesize = _.filesize
             try:
-                print('[FILE SIZE]', convert_bytes(int(filesize)))
+                print(get_dt() + '[FILE SIZE] ' + str(convert_bytes(int(filesize))))
             except:
                 pass
 
             md5 = _.md5
             if md5 == '':
-                print('-- could not find md5, skipping')
+                print(get_dt() + 'could not find md5, skipping')
                 failed.append([title, author, year])
                 break
-            print('[md5]', md5)
+            print(get_dt() + '[md5] ' + md5)
 
             url = ('http://library.lol/main/' + str(md5))
             rHead = requests.get(url)
@@ -163,11 +170,11 @@ def dl_books(search_q, f_dir, lookup_ids):
                 idx = str(href).rfind('.')
                 _ext_ = str(href)[idx:]
                 for _ in sol_ext.ext_:
-                    # print('comparing:', _ext_, '--> list item:', str(_).strip().lower())
+                    # print(get_dt() + 'comparing:', _ext_, '--> list item:', str(_).strip().lower())
                     if not _ == '.html':
                         if str(noCase(_ext_).strip()) == '.' + str(_).strip().lower():
                             ext = '.' + str(_.lower())
-                            print('[HREF]', href)
+                            print(get_dt() + '[HREF] ' + str(href))
                             break
                 break
 
@@ -177,12 +184,12 @@ def dl_books(search_q, f_dir, lookup_ids):
                 src = (link.get('src'))
                 if src:
                     if src.endswith('.jpg'):
-                        print('[IMAGE]', src)
+                        print(get_dt() + '[IMAGE] ' + str(src))
                         img_ = 'http://library.lol/' + src
                         break
 
             if ext:
-                print('[EXTENSION]', ext)
+                print(get_dt() + '[EXTENSION] ' + str(ext))
                 save_path = f_dir + "".join([c for c in title if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                 save_path = save_path + ' (by ' + "".join([c for c in author if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                 save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')' + ext
@@ -194,9 +201,10 @@ def dl_books(search_q, f_dir, lookup_ids):
                     'Accept-Encoding': 'text/plain',
                     'Accept-Language': 'en-US,en;q=0.9'
                     }
+                retries = urllib3.Retry(connect=5, read=2, redirect=5)
                 if not os.path.exists(save_path_img):
-                    print('[SAVING]', save_path_img)
-                    http = urllib3.PoolManager()
+                    print(get_dt() + '[SAVING] ' + str(save_path_img))
+                    http = urllib3.PoolManager(retries=retries)
                     r = http.request('GET', img_, preload_content=False, headers=headers)
                     with open(save_path_img, 'wb') as out:
                         while True:
@@ -207,9 +215,9 @@ def dl_books(search_q, f_dir, lookup_ids):
                     r.release_conn()
 
                 if not os.path.exists(save_path):
-                    print('[SAVING]', save_path)
+                    print(get_dt() + '[SAVING] ' + str(save_path))
                     try:
-                        retries = urllib3.Retry(connect=5, read=2, redirect=5)
+
                         http = urllib3.PoolManager(retries=retries)
                         r = http.request('GET', href, preload_content=False, headers=headers)
                         with open(save_path, 'wb') as out:
@@ -221,18 +229,18 @@ def dl_books(search_q, f_dir, lookup_ids):
                         r.release_conn()
 
                     except Exception as e:
-                        print(e)
+                        print(get_dt() + str(e))
                         failed.append([title, author, year, href])
                 else:
-                    print('[SKIPPING]')
+                    print(get_dt() + '[SKIPPING]')
             else:
                 failed.append([title, author, year, href])
         except Exception as e:
-            print(e)
+            print(get_dt() + str(e))
             try:
                 failed.append([_.title, _.author, _.year, href])
             except Exception as e:
-                print(e)
+                print(get_dt() + str(e))
 
 
 # Help menu
@@ -269,7 +277,7 @@ for _ in sys.argv:
             if i_2 >= i+1:
                 str_ = str_ + ' ' + str(_)
             i_2 += 1
-        print('[Search]', str_)
+        print(get_dt() + '[Search] ' + str(str_))
         search_q = str_
         run_function = 0
         break
@@ -296,30 +304,30 @@ if run_function == 0:
     print('')
     print('-' * 100)
     if failed:
-        print('\nmay have failed (check to confirm):')
+        print('')
+        print(get_dt() + 'may have failed (check to confirm):')
         for _ in failed:
             print('   ', _)
-        print('may have failed:', len(failed))
-    else:
-        print('-- use -h for help.')
-    print('-- completed.')
+        print(get_dt() + 'may have failed: ' + str(len(failed)))
+
+    print(get_dt() + 'completed.')
 
 elif run_function == 1:
     banner()
-    print('[Update Library]')
+    print(get_dt() + '[Update Library]')
     update_max = 0
     search_q = []
     for dirname, dirnames, filenames in os.walk('./library_genesis'):
         for subdirname in dirnames:
             fullpath = os.path.join(subdirname)
             search_q.append(fullpath)
-            print('    [update]', fullpath)
+            print('    [update] ' + str(fullpath))
             update_max += 1
     i_query = 0
     dl_method = 'update'
     for _ in search_q:
         i_page = 1
-        print('[updating]', _)
+        print(get_dt() + '[updating] ' + str(_))
         compile_ids(search_q[i_query], i_page)
         i_query += 1
 print('\n\n')
