@@ -36,5 +36,5 @@ Query:
     Intended for use with a local pdf library. Queries the library and saves results to file.
 
 create_sol_library.py:
-    Intended for use with kiwix. Runs kiwix manage as a subprocess to auto compile a library.xml from a bag
-    of ZIM files. The compiled .xml file can then be used with kiwix serve.
+    Intended for use with kiwix. Runs kiwix-manage.exe as a subprocess to auto compile a library.xml from a bag
+    of ZIM files. The compiled .xml file can then be used with kiwix-serve.exe.
