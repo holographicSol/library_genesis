@@ -30,3 +30,5 @@ https://www.kiwix.org/en/downloads/kiwix-serve/
 And zim files to compliment kiwix-serve:
 https://download.kiwix.org/zim/
 
+Extras:
+query.py - query a local file/directory for information, like the vampire dude from Blade.
