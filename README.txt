@@ -31,4 +31,10 @@ And zim files to compliment kiwix-serve:
 https://download.kiwix.org/zim/
 
 Extras:
-query.py - query a local file/directory for information, like the vampire dude from Blade.
+Query:
+    Query a local file/directory(library_genesis directory) for information, like the vampire dude from Blade.
+    Intended for use with a local pdf library. Queries the library and saves results to file.
+
+create_sol_library.py:
+    Intended for use with kiwix. Runs kiwix manage as a subprocess to auto compile a library.xml from a bag
+    of ZIM files.
