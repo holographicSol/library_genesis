@@ -10,6 +10,7 @@ import urllib.request
 import urllib3
 import socket
 import unicodedata
+import subprocess
 import sol_ext
 
 failed = []
@@ -22,6 +23,11 @@ i_update = 0
 start_page = False
 i_page = 1
 
+info = subprocess.STARTUPINFO()
+info.dwFlags = 1
+info.wShowWindow = 0
+main_pid = int()
+
 
 def NFD(text):
     return unicodedata.normalize('NFD', text)
@@ -29,6 +35,13 @@ def NFD(text):
 
 def noCase(text):
     return NFD(NFD(text).casefold())
+
+
+def convert_bytes(num):
+    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if num < 1024.0:
+            return str(num)+' '+x
+        num /= 1024.0
 
 
 def banner():
@@ -127,7 +140,10 @@ def dl_books(search_q, f_dir, lookup_ids):
             print('[YEAR]', year)
 
             filesize = _.filesize
-            print('[FILE SIZE]', filesize)
+            try:
+                print('[FILE SIZE]', convert_bytes(int(filesize)))
+            except:
+                pass
 
             md5 = _.md5
             if md5 == '':
@@ -146,7 +162,6 @@ def dl_books(search_q, f_dir, lookup_ids):
                 href = (link.get('href'))
                 idx = str(href).rfind('.')
                 _ext_ = str(href)[idx:]
-                # Art and Armenian Propaganda Ararat As A Case Study (by Sedat Laçiner Şenol Kantarcı 2002)
                 for _ in sol_ext.ext_:
                     # print('comparing:', _ext_, '--> list item:', str(_).strip().lower())
                     if not _ == '.html':
@@ -194,9 +209,9 @@ def dl_books(search_q, f_dir, lookup_ids):
                 if not os.path.exists(save_path):
                     print('[SAVING]', save_path)
                     try:
-                        http = urllib3.PoolManager()
+                        retries = urllib3.Retry(connect=5, read=2, redirect=5)
+                        http = urllib3.PoolManager(retries=retries)
                         r = http.request('GET', href, preload_content=False, headers=headers)
-
                         with open(save_path, 'wb') as out:
                             while True:
                                 data = r.read(int(filesize))
@@ -204,6 +219,7 @@ def dl_books(search_q, f_dir, lookup_ids):
                                     break
                                 out.write(data)
                         r.release_conn()
+
                     except Exception as e:
                         print(e)
                         failed.append([title, author, year, href])
