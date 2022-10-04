@@ -7,6 +7,7 @@ from pylibgen import Library
 import requests
 from bs4 import BeautifulSoup
 import urllib.request
+import urllib3
 
 failed = []
 ids_ = []
@@ -15,6 +16,8 @@ page_max = 0
 dl_method = ''
 update_max = 0
 i_update = 0
+start_page = False
+i_page = 1
 
 
 def banner():
@@ -100,25 +103,28 @@ def dl_books(search_q, f_dir, lookup_ids):
             title = _.title
             if title == '':
                 title = str(i) + '_unknown_title'
-            print('[TITLE]', _.title)
+            print('[TITLE]', title)
 
             author = _.author
             if author == '':
                 author = str(i) + '_unknown_author'
-            print('[AUTHOR]', _.author)
+            print('[AUTHOR]', author)
 
             year = _.year
             if not year:
                 year = ''
-            print('[YEAR]', _.year)
+            print('[YEAR]', year)
+
+            filesize = _.filesize
+            print('[FILE SIZE]', filesize)
 
             md5 = _.md5
             if md5 == '':
                 print('-- could not find md5, skipping')
                 failed.append([title, author, year])
                 break
-            print('[md5]', _.md5)
-
+            print('[md5]', md5)
+            
             url = ('http://library.lol/main/' + str(md5))
             rHead = requests.get(url)
             data = rHead.text
@@ -142,21 +148,28 @@ def dl_books(search_q, f_dir, lookup_ids):
                 elif href.endswith('.mobi'):
                     ext = '.mobi'
                     break
+                elif href.endswith('.rar'):
+                    ext = '.rar'
+                    break
                 else:
                     print('[UNHANDLED HREF]', href)
-
             if ext:
                 print('[EXTENSION]', ext)
-                # print('download:', href)
-
                 save_path = f_dir + "".join([c for c in title if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                 save_path = save_path + ' (by ' + "".join([c for c in author if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                 save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')' + ext
-
                 if not os.path.exists(save_path):
                     print('[SAVING]', save_path)
                     try:
-                        urllib.request.urlretrieve(href, save_path)
+                        http = urllib3.PoolManager()
+                        r = http.request('GET', href, preload_content=False)
+                        with open(save_path, 'wb') as out:
+                            while True:
+                                data = r.read(int(filesize))
+                                if not data:
+                                    break
+                                out.write(data)
+                        r.release_conn()
                     except Exception as e:
                         print(e)
                         failed.append([title, author, year, href])
@@ -164,7 +177,6 @@ def dl_books(search_q, f_dir, lookup_ids):
                     print('[SKIPPING]')
             else:
                 failed.append([title, author, year, href])
-
         except Exception as e:
             print(e)
             try:
@@ -186,8 +198,10 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('    -u      Update. Update an existing library genesis directory.')
     print('            Each directory name in an existing ./library_genesis directory will')
     print('            be used as a keyword during update process.')
+    print('    -p      Page. Specify start page number.')
     print('')
     print('    Example: library_genesis -k human')
+    print('    Example: library_genesis -p 3 -k human')
     print('    Example: library_genesis -u')
     print('')
 
@@ -210,6 +224,9 @@ for _ in sys.argv:
         run_function = 0
         break
 
+    elif _ == '-p':
+        i_page = int(sys.argv[i+1])
+
     # update
     elif _ == '-u':
         run_function = 1
@@ -222,7 +239,7 @@ if run_function == 0:
     enumerate()
     if page_max >= 1:
         dl_method = 'keyword'
-        i_page = 1
+        # i_page = 1
         while i_page < page_max:
             compile_ids(search_q, i_page)
             i_page += 1
