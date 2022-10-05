@@ -14,6 +14,7 @@ import unicodedata
 import subprocess
 import sol_ext
 
+max_retry = 0
 failed = []
 ids_ = []
 search_q = ''
@@ -29,11 +30,33 @@ info.dwFlags = 1
 info.wShowWindow = 0
 main_pid = int()
 
+retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 3
+headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+                    'Accept-Encoding': 'text/plain',
+                    'Accept-Language': 'en-US,en;q=0.9'
+                    }
 
 def get_dt():
     dt = datetime.datetime.now()
     dt = '[' + str(dt) + '] '
     return dt
+
+def clear_console():
+    command = 'clear'
+    if os.name in ('nt', 'dos'):  # If Machine is running on Windows, use cls
+        command = 'cls'
+    os.system(command)
+
+
+def clear_console_line(char_limit):
+    print(' '*char_limit, end='\r', flush=True)
+
+
+def pr_technical_data(technical_data, char_limit):
+    technical_data = technical_data[:char_limit]
+    print(technical_data, end='\r', flush=True)
 
 
 def NFD(text):
@@ -114,6 +137,37 @@ def compile_ids(search_q, i_page):
         dl_books(search_q, f_dir, lookup_ids)
 
 
+def dl(href, save_path, str_filesize, filesize, title, author, year):
+    global max_retry
+    http = urllib3.PoolManager(retries=retries)
+    r = http.request('GET', href, preload_content=False, headers=headers)
+    char_limit = 0
+    dl_sz = 0
+    with open(save_path, 'wb') as out:
+        while True:
+            data = r.read(10000)
+            if not data:
+                dl_sz += int(len(data))
+                break
+            out.write(data)
+            dl_sz += int(len(data))
+            clear_console_line(char_limit=char_limit)
+            pr_str = str(get_dt() + '[DOWNLOADING BOOK] ' + str(convert_bytes(int(dl_sz))) + str(' / ') + str_filesize)
+            pr_technical_data(pr_str, char_limit=int(len(pr_str)))
+            char_limit = int(len(pr_str))
+    r.release_conn()
+    print(str(get_dt() + '[DOWNLOADED] ' + str(convert_bytes(int(dl_sz))) + ' / ' + str_filesize))
+    if int(dl_sz) == int(filesize):
+        print(str(get_dt() + '[DOWNLOADED SUCCESSFULLY]'))
+    else:
+        print(str(get_dt() + '[DOWNLOADED FAILED]'))
+        failed.append([title, author, year, href])
+        max_retry += 1
+        if max_retry < 3:
+            print(str(get_dt() + '[RETRYING] ' + str(max_retry)))
+            dl(href, save_path, str_filesize, filesize, title, author, year)
+
+
 def dl_books(search_q, f_dir, lookup_ids):
     global ids_, dl_method, i_update
     i = 0
@@ -149,6 +203,7 @@ def dl_books(search_q, f_dir, lookup_ids):
             filesize = _.filesize
             try:
                 print(get_dt() + '[FILE SIZE] ' + str(convert_bytes(int(filesize))))
+                str_filesize = str(convert_bytes(int(filesize)))
             except:
                 pass
 
@@ -178,7 +233,6 @@ def dl_books(search_q, f_dir, lookup_ids):
                             break
                 break
 
-            # http://library.lol/covers/183000/9859fc9115a0b616218bcaa692ca87ca-d.jpg
             img_ = ''
             for link in soup.find_all('img'):
                 src = (link.get('src'))
@@ -195,39 +249,24 @@ def dl_books(search_q, f_dir, lookup_ids):
                 save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')' + ext
                 save_path_img = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ').jpg'
 
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                    'Accept-Encoding': 'text/plain',
-                    'Accept-Language': 'en-US,en;q=0.9'
-                    }
-                retries = urllib3.Retry(connect=5, read=2, redirect=5)
+                # dl book cover
                 if not os.path.exists(save_path_img):
                     print(get_dt() + '[SAVING] ' + str(save_path_img))
                     http = urllib3.PoolManager(retries=retries)
                     r = http.request('GET', img_, preload_content=False, headers=headers)
                     with open(save_path_img, 'wb') as out:
                         while True:
-                            data = r.read(1000000000)
+                            data = r.read(1000)
                             if not data:
                                 break
                             out.write(data)
                     r.release_conn()
 
+                # dl book
                 if not os.path.exists(save_path):
                     print(get_dt() + '[SAVING] ' + str(save_path))
                     try:
-
-                        http = urllib3.PoolManager(retries=retries)
-                        r = http.request('GET', href, preload_content=False, headers=headers)
-                        with open(save_path, 'wb') as out:
-                            while True:
-                                data = r.read(int(filesize))
-                                if not data:
-                                    break
-                                out.write(data)
-                        r.release_conn()
-
+                        dl(href, save_path, str_filesize, filesize, title, author, year)
                     except Exception as e:
                         print(get_dt() + str(e))
                         failed.append([title, author, year, href])
