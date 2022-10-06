@@ -26,6 +26,7 @@ if not os.path.exists('./dl_index.txt'):
     open('./dl_index.txt', 'w').close()
 
 
+cwd = os.getcwd()
 run_function = 0
 max_retry = 3
 max_retry_i = 0
@@ -63,30 +64,40 @@ def get_dt():
     return dt
 
 
-def dl_index(text, dl_status):
+def dl_index(save_path, dl_status):
 
     if not os.path.exists('./dl_index.txt'):
         open('./dl_index.txt', 'w').close()
 
-    w_mode = ''
-    rep_line = ''
+    check_exist = False
+    line_list = []
 
-    if os.path.exists('./dl_index.txt'):
-        with codecs.open('./dl_index.txt', 'r', encoding='utf8') as fo:
+    if os.path.exists(cwd+'/dl_index.txt'):
+        with codecs.open(cwd+'/dl_index.txt', 'r', encoding='utf8') as fo:
             for line in fo:
                 line = line.strip()
-                if line.startswith(text):
-                    w_mode = 'inplace'
-                    rep_line = line
+                if line != save_path + ' False':
+                    line_list.append(line)
+                elif line == save_path + ' False':
+                    check_exist = True
 
-        if w_mode == '':
-            with codecs.open('./dl_index.txt', 'a', encoding='utf8') as fo:
-                fo.write(text + ' ' + dl_status + '\n')
+        if dl_status == 'False' and check_exist is False:
+            with codecs.open(cwd+'/dl_index.txt', 'a', encoding='utf8') as fo:
+                fo.write(save_path + ' ' + dl_status + '\n')
             fo.close()
 
-        elif w_mode == 'inplace' and dl_status:
-            for line in fileinput.input('./dl_index.txt', inplace=True):
-                print(line.rstrip().replace(rep_line, text + ' ' + dl_status)),
+        elif dl_status == 'True' and check_exist is True:
+            open(cwd+'/dl_index.txt', 'w').close()
+            with codecs.open(cwd+'/dl_index.txt', 'a', encoding='utf8') as fo:
+                for _ in line_list:
+                    fo.write(str(_) + '\n')
+            fo.close()
+
+            # uncomment to use fileinput
+            # for line in fileinput.input(cwd+'/dl_index.txt', inplace=True):
+            #     print(line.rstrip().replace(save_path + ' False', '')),
+    else:
+        print(get_dt() + '[DL_INDEX] is missing.')
 
 
 def clear_console():
@@ -194,7 +205,7 @@ def compile_ids(search_q, i_page):
 def dl(href, save_path, str_filesize, filesize, title, author, year):
     global max_retry, max_retry_i, total_dl_success
 
-    dl_index(text=save_path, dl_status='False')
+    dl_index(save_path=save_path, dl_status='False')
 
     char_limit = 0
     dl_sz = 0
@@ -237,7 +248,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year):
         print(str(get_dt() + '[DOWNLOADED] ' + str(convert_bytes(int(dl_sz))) + ' / ' + str(convert_bytes(int(filesize)))))
         print(str(get_dt() + '[DOWNLOADED SUCCESSFULLY]'))
         total_dl_success += 1
-        dl_index(text=save_path, dl_status='True')
+        dl_index(save_path=save_path, dl_status='True')
     else:
 
         clear_console_line(char_limit=char_limit)
@@ -382,12 +393,12 @@ def dl_books(search_q, f_dir, lookup_ids):
                         for line in fo:
                             line = line.strip()
 
-                            if line == save_path + ' True':
-                                # print('comparing:', line, ' --> ', save_path + ' ' + 'Bool')
-                                non_indexed = False
-                                skip_dl = True
+                            # if line == save_path + ' True':
+                            #     # print('comparing:', line, ' --> ', save_path + ' ' + 'Bool')
+                            #     non_indexed = False
+                            #     skip_dl = True
 
-                            elif line == save_path + ' False':
+                            if line == save_path + ' False':
                                 # print('comparing:', line, ' --> ', save_path + ' ' + 'Bool')
                                 non_indexed = False
                                 skip_dl = False
