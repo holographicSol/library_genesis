@@ -43,7 +43,7 @@ https://download.kiwix.org/zim/
 
 Extras:
 Query:
-    Query a local file/directory(library_genesis directory) for information, like the vampire dude from Blade.
+    Query the archive (library_genesis directory) for information, like the vampire dude from Blade.
     Intended for use with a local pdf library. Queries the library and saves results to file.
 
 create_sol_library.py:
