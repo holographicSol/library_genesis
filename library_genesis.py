@@ -22,6 +22,8 @@ import sol_ext
 
 socket.setdefaulttimeout(15)
 
+
+run_function = 0
 max_retry = 3
 max_retry_i = 0
 no_ext = []
@@ -59,27 +61,29 @@ def get_dt():
 
 
 def dl_index(text, dl_status):
+
     if not os.path.exists('./dl_index.txt'):
         open('./dl_index.txt', 'w').close()
 
     w_mode = ''
     rep_line = ''
 
-    with codecs.open('./dl_index.txt', 'r', encoding='utf8') as fo:
-        for line in fo:
-            line = line.strip()
-            if line.startswith(text):
-                w_mode = 'inplace'
-                rep_line = line
+    if os.path.exists('./dl_index.txt'):
+        with codecs.open('./dl_index.txt', 'r', encoding='utf8') as fo:
+            for line in fo:
+                line = line.strip()
+                if line.startswith(text):
+                    w_mode = 'inplace'
+                    rep_line = line
 
-    if w_mode == '':
-        with codecs.open('./dl_index.txt', 'a', encoding='utf8') as fo:
-            fo.write(text + ' ' + dl_status + '\n')
-        fo.close()
+        if w_mode == '':
+            with codecs.open('./dl_index.txt', 'a', encoding='utf8') as fo:
+                fo.write(text + ' ' + dl_status + '\n')
+            fo.close()
 
-    elif w_mode == 'inplace':
-        for line in fileinput.input('./dl_index.txt', inplace=True):
-            print(line.rstrip().replace(rep_line, text + ' ' + dl_status)),
+        elif w_mode == 'inplace' and dl_status:
+            for line in fileinput.input('./dl_index.txt', inplace=True):
+                print(line.rstrip().replace(rep_line, text + ' ' + dl_status)),
 
 
 def clear_console():
@@ -435,8 +439,6 @@ def summary():
     print('')
     print('-' * 100)
 
-
-run_function = 0
 # Help menu
 if len(sys.argv) == 2 and sys.argv[1] == '-h':
     banner()
@@ -486,12 +488,14 @@ for _ in sys.argv:
             i_2 += 1
         print(get_dt() + '[Search] ' + str(str_))
         search_q = str_
+        run_function = 0
         break
 
     elif _ == '-p':
         i_page_ = str(sys.argv[i+1])
         if i_page_.isdigit():
             i_page = int(sys.argv[i+1])
+            run_function = 0
         else:
             run_function = 4
 
@@ -501,6 +505,7 @@ for _ in sys.argv:
             max_retry = int(sys.argv[i+1])
         elif str(sys.argv[i+1]) == 'no-limit':
             max_retry = str(sys.argv[i+1])
+            run_function = 0
         else:
             run_function = 2
 
@@ -512,6 +517,7 @@ for _ in sys.argv:
             search_mode = sys.argv[i+1]
         elif sys.argv[i+1] == 'isbn':
             search_mode = sys.argv[i+1]
+            run_function = 0
         else:
             run_function = 3
 
