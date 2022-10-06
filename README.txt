@@ -44,7 +44,8 @@ https://download.kiwix.org/zim/
 Extras:
 Query:
     Query the archive (library_genesis directory) for information, like the vampire dude from Blade.
-    Intended for use with a local pdf library. Queries the library and saves results to file.
+    Intended for use with a local pdf library. Queries the library and saves results to file for
+    later reference.
 
 create_sol_library.py:
     Intended for use with kiwix. Runs kiwix-manage.exe as a subprocess to auto compile a library.xml from a bag
