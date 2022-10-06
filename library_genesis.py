@@ -1,27 +1,35 @@
 """
 Written by Benjamin Jack Cullen aka Holographic_Sol
+
+todo:
+    search by author.
+
 """
 import datetime
 import os
 import sys
+import time
+import codecs
 from pylibgen import Library
 import requests
 from bs4 import BeautifulSoup
-import urllib.request
 import urllib3
-import socket
 import unicodedata
 import subprocess
+import socket
+import fileinput
 import sol_ext
 
+socket.setdefaulttimeout(15)
+
 max_retry = 0
+max_retry_i = 0
 failed = []
 ids_ = []
 search_q = ''
 page_max = 0
 dl_method = ''
 update_max = 0
-i_update = 0
 start_page = False
 i_page = 1
 
@@ -32,16 +40,42 @@ main_pid = int()
 
 retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 3
 headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                    'Accept-Encoding': 'text/plain',
-                    'Accept-Language': 'en-US,en;q=0.9'
-                    }
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+    'Accept-Encoding': 'text/plain',
+    'Accept-Language': 'en-US,en;q=0.9'
+    }
+
 
 def get_dt():
     dt = datetime.datetime.now()
     dt = '[' + str(dt) + '] '
     return dt
+
+
+def dl_index(text, dl_status):
+    if not os.path.exists('./dl_index.txt'):
+        open('./dl_index.txt', 'w').close()
+
+    w_mode = ''
+    rep_line = ''
+
+    with codecs.open('./dl_index.txt', 'r', encoding='utf8') as fo:
+        for line in fo:
+            line = line.strip()
+            if line.startswith(text):
+                w_mode = 'inplace'
+                rep_line = line
+
+    if w_mode == '':
+        with codecs.open('./dl_index.txt', 'a', encoding='utf8') as fo:
+            fo.write(text + ' ' + dl_status + '\n')
+        fo.close()
+
+    elif w_mode == 'inplace':
+        for line in fileinput.input('./dl_index.txt', inplace=True):
+            print(line.rstrip().replace(rep_line, text + ' ' + dl_status)),
+
 
 def clear_console():
     command = 'clear'
@@ -81,7 +115,8 @@ def banner():
 
 
 def enumerate():
-    # every page
+    """ Used to measure multiple instances of progress """
+
     global page_max, search_q
     i_page = 1
     add_page = True
@@ -123,6 +158,8 @@ def compile_ids(search_q, i_page):
 
     except Exception as e:
         print(get_dt() + str(e))
+        time.sleep(5)
+        compile_ids(search_q, i_page)
 
     lookup_ids = library_.lookup(ids_)
     print('-' * 100)
@@ -131,55 +168,104 @@ def compile_ids(search_q, i_page):
     print('-' * 100)
 
     if ids_:
-
         if not os.path.exists(f_dir):
             os.mkdir(f_dir)
         dl_books(search_q, f_dir, lookup_ids)
 
 
 def dl(href, save_path, str_filesize, filesize, title, author, year):
-    global max_retry
-    http = urllib3.PoolManager(retries=retries)
-    r = http.request('GET', href, preload_content=False, headers=headers)
+    global max_retry, max_retry_i
+
+    dl_index(text=save_path, dl_status='False')
+
     char_limit = 0
     dl_sz = 0
+
+    open(save_path, 'w').close()
     with open(save_path, 'wb') as out:
-        while True:
-            data = r.read(10000)
-            if not data:
+        try:
+            http = urllib3.PoolManager(retries=retries)
+            r = http.request('GET', href, preload_content=False, headers=headers)
+
+            while True:
+                data = r.read(10000)
+
+                if not data:
+                    dl_sz += int(len(data))
+                    break
+
+                out.write(data)
                 dl_sz += int(len(data))
-                break
-            out.write(data)
-            dl_sz += int(len(data))
+
+                clear_console_line(char_limit=char_limit)
+                pr_str = str(get_dt() + '[DOWNLOADING BOOK] ' + str(convert_bytes(int(dl_sz))) + str(' / ') + str_filesize)
+                pr_technical_data(pr_str, char_limit=int(len(pr_str)))
+                char_limit = int(len(pr_str))
+
+        except Exception as e:
+            e = str(e)
             clear_console_line(char_limit=char_limit)
-            pr_str = str(get_dt() + '[DOWNLOADING BOOK] ' + str(convert_bytes(int(dl_sz))) + str(' / ') + str_filesize)
+            pr_str = str(get_dt() + '[ERROR]')
             pr_technical_data(pr_str, char_limit=int(len(pr_str)))
             char_limit = int(len(pr_str))
-    r.release_conn()
-    print(str(get_dt() + '[DOWNLOADED] ' + str(convert_bytes(int(dl_sz))) + ' / ' + str_filesize))
+
+    out.close()
+    try:
+        r.release_conn()
+    except:
+        pass
+
     if int(dl_sz) == int(filesize):
+        print(str(get_dt() + '[DOWNLOADED] ' + str(convert_bytes(int(dl_sz))) + ' / ' + str(convert_bytes(int(filesize)))))
         print(str(get_dt() + '[DOWNLOADED SUCCESSFULLY]'))
+        dl_index(text=save_path, dl_status='True')
     else:
-        print(str(get_dt() + '[DOWNLOADED FAILED]'))
+
+        clear_console_line(char_limit=char_limit)
+        pr_str = str(get_dt() + '[DOWNLOADED FAILED]')
+        pr_technical_data(pr_str, char_limit=int(len(pr_str)))
+        char_limit = int(len(pr_str))
+
         failed.append([title, author, year, href])
-        max_retry += 1
-        if max_retry < 3:
-            print(str(get_dt() + '[RETRYING] ' + str(max_retry)))
+
+        max_retry_i += 1
+        if str(max_retry).isdigit():
+            if max_retry_i < max_retry:
+
+                clear_console_line(char_limit=char_limit)
+                pr_str = str(get_dt() + '[RETRYING] ' + str(max_retry_i)) + ' / ' + str(max_retry)
+                pr_technical_data(pr_str, char_limit=int(len(pr_str)))
+                char_limit = int(len(pr_str))
+
+                time.sleep(5)
+                dl(href, save_path, str_filesize, filesize, title, author, year)
+
+        elif str(max_retry) == 'no-limit':
+
+            clear_console_line(char_limit=char_limit)
+            pr_str = str(get_dt() + '[RETRYING] ' + str(max_retry_i)) + ' / ' + str(max_retry)
+            pr_technical_data(pr_str, char_limit=int(len(pr_str)))
+            char_limit = int(len(pr_str))
+
+            time.sleep(5)
             dl(href, save_path, str_filesize, filesize, title, author, year)
 
 
 def dl_books(search_q, f_dir, lookup_ids):
-    global ids_, dl_method, i_update
+    global ids_, dl_method, max_retry_i
     i = 0
-    i_update += 1
+    i_update = 0
+    save_path = ''
     for _ in lookup_ids:
         try:
             i += 1
+            max_retry_i = 0
             print('-' * 100)
             if dl_method == 'keyword':
                 print(get_dt() + '[PAGE] ' + str(i_page) + ' / ' + str(page_max))
                 print(get_dt() + '[PROGRESS] ' + str(i) + ' / ' + str(len(ids_)))
             elif dl_method == 'update':
+                i_update += 1
                 print(get_dt() + '[UPDATE] ' + str(search_q))
                 print(get_dt() + '[PROGRESS] ' + str(i_update) + ' / ' + str(update_max))
 
@@ -229,7 +315,7 @@ def dl_books(search_q, f_dir, lookup_ids):
                     if not _ == '.html':
                         if str(noCase(_ext_).strip()) == '.' + str(_).strip().lower():
                             ext = '.' + str(_.lower())
-                            print(get_dt() + '[HREF] ' + str(href))
+                            print(get_dt() + '[URL] ' + str(href))
                             break
                 break
 
@@ -260,18 +346,67 @@ def dl_books(search_q, f_dir, lookup_ids):
                             if not data:
                                 break
                             out.write(data)
+                    out.close()
                     r.release_conn()
 
                 # dl book
                 if not os.path.exists(save_path):
+                    print(get_dt() + '[CHECK] File does not already exist. Attempting download.')
                     print(get_dt() + '[SAVING] ' + str(save_path))
                     try:
                         dl(href, save_path, str_filesize, filesize, title, author, year)
                     except Exception as e:
                         print(get_dt() + str(e))
                         failed.append([title, author, year, href])
+
+                        if not save_path == '':
+                            if os.path.exists(save_path):
+                                os.remove(save_path)
+                            dl_books(search_q, f_dir, lookup_ids)
                 else:
-                    print(get_dt() + '[SKIPPING]')
+                    skip_dl = False
+                    non_indexed = True
+                    with open('./dl_index.txt', 'r') as fo:
+                        for line in fo:
+                            line = line.strip()
+
+                            if line == save_path + ' True':
+                                # print('comparing:', line, ' --> ', save_path + ' ' + 'Bool')
+                                non_indexed = False
+                                skip_dl = True
+
+                            elif line == save_path + ' False':
+                                # print('comparing:', line, ' --> ', save_path + ' ' + 'Bool')
+                                non_indexed = False
+                                skip_dl = False
+
+                    fo.close()
+                    # print('non_indexed:', non_indexed)
+                    # print('skip_dl:', skip_dl)
+
+                    if non_indexed is True:
+                        """ if the file already exists and is not indexed then leave the file alone! """
+                        print(get_dt() + '[CHECK] File exists however this program will leave it alone.')
+                        print(get_dt() + '[SKIPPING]')
+
+                    elif skip_dl is True and non_indexed is False:
+                        """ if the file already exists and has been completed according to dl_index """
+                        print(get_dt() + '[CHECK] File exists however the index says the downlaod was successful.')
+                        print(get_dt() + '[SKIPPING]')
+
+                    elif skip_dl is False and non_indexed is False:
+                        """ if the file already exists and has not been completed according to dl_index """
+                        print(get_dt() + '[CHECK] File exists. Attempting re-download as download incomplete according to index.')
+                        print(get_dt() + '[SAVING] ' + str(save_path))
+                        try:
+                            dl(href, save_path, str_filesize, filesize, title, author, year)
+                        except Exception as e:
+                            print(get_dt() + str(e))
+                            failed.append([title, author, year, href])
+
+                            dl_books(search_q, f_dir, lookup_ids)
+                    fo.close()
+
             else:
                 failed.append([title, author, year, href])
         except Exception as e:
@@ -280,6 +415,10 @@ def dl_books(search_q, f_dir, lookup_ids):
                 failed.append([_.title, _.author, _.year, href])
             except Exception as e:
                 print(get_dt() + str(e))
+
+            dl_books(search_q, f_dir, lookup_ids)
+
+        # i += 1
 
 
 # Help menu
@@ -290,12 +429,13 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('    Written by Benjamin Jack Cullen.')
     print('')
     print('Command line arguments:\n')
-    print('    -h      Displays this help message.')
-    print('    -k      Keyword. Specify keyword(s).')
-    print('    -u      Update. Update an existing library genesis directory.')
-    print('            Each directory name in an existing ./library_genesis directory will')
-    print('            be used as a keyword during update process.')
-    print('    -p      Page. Specify start page number.')
+    print('    -h             Displays this help message.')
+    print('    -k             Keyword. Specify keyword(s).')
+    print('    -u             Update. Update an existing library genesis directory.')
+    print('                   Each directory name in an existing ./library_genesis directory will')
+    print('                   be used as a keyword during update process.')
+    print('    -p             Page. Specify start page number.')
+    print('    --retry-max    Max number of retries for an incomplete download.')
     print('')
     print('    Example: library_genesis -k human')
     print('    Example: library_genesis -p 3 -k human')
@@ -323,6 +463,12 @@ for _ in sys.argv:
 
     elif _ == '-p':
         i_page = int(sys.argv[i+1])
+
+    elif _ == '--retry-max':
+        if str(sys.argv[i+1]).isdigit():
+            max_retry = int(sys.argv[i+1])
+        elif str(sys.argv[i+1]) == 'no-limit':
+            max_retry = str(sys.argv[i+1])
 
     # update
     elif _ == '-u':
