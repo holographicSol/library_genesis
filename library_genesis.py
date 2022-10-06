@@ -436,6 +436,7 @@ def summary():
     print('-' * 100)
 
 
+run_function = 0
 # Help menu
 if len(sys.argv) == 2 and sys.argv[1] == '-h':
     banner()
@@ -464,11 +465,11 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('    Example: library_genesis --retry-max no-limit --search-mode title -k human')
     print('    Example: library_genesis -u')
     print('')
+    run_function = 999
 
 # Parse arguments
 run_function = ()
 i = 0
-run_function = 0
 retry_max_ = ''
 search_mode_ = ''
 i_page_ = ''
