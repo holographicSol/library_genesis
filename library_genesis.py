@@ -41,6 +41,7 @@ update_max = 0
 start_page = False
 i_page = 1
 search_mode = 'title'
+total_i = 0
 
 info = subprocess.STARTUPINFO()
 info.dwFlags = 1
@@ -282,19 +283,20 @@ def dl(href, save_path, str_filesize, filesize, title, author, year):
 
 
 def dl_books(search_q, f_dir, lookup_ids):
-    global ids_, dl_method, max_retry_i, no_md5, no_ext, failed, total_books
+    global ids_, dl_method, max_retry_i, no_md5, no_ext, failed, total_books, total_i
     i = 0
     i_update = 0
     save_path = ''
     for _ in lookup_ids:
         try:
             i += 1
+            total_i += 1
             max_retry_i = 0
             print('-' * 100)
             if dl_method == 'keyword':
                 print(get_dt() + '[KEYWORD] ' + str(search_q))
                 print(get_dt() + '[PAGE] ' + str(i_page) + ' / ' + str(page_max))
-                print(get_dt() + '[PROGRESS] ' + str(i) + ' / ' + str(len(ids_)) + ' (' + total_books + ')')
+                print(get_dt() + '[PROGRESS] ' + str(i) + ' / ' + str(len(ids_)) + ' (' + str(total_books) + ')')
             elif dl_method == 'update':
                 i_update += 1
                 print(get_dt() + '[UPDATE] ' + str(search_q))
@@ -392,11 +394,6 @@ def dl_books(search_q, f_dir, lookup_ids):
                     with open('./dl_index.txt', 'r') as fo:
                         for line in fo:
                             line = line.strip()
-
-                            # if line == save_path + ' True':
-                            #     # print('comparing:', line, ' --> ', save_path + ' ' + 'Bool')
-                            #     non_indexed = False
-                            #     skip_dl = True
 
                             if line == save_path + ' False':
                                 # print('comparing:', line, ' --> ', save_path + ' ' + 'Bool')
