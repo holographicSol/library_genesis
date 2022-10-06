@@ -22,8 +22,10 @@ import sol_ext
 
 socket.setdefaulttimeout(15)
 
-max_retry = 0
+max_retry = 3
 max_retry_i = 0
+no_ext = []
+no_md5 = []
 failed = []
 ids_ = []
 search_q = ''
@@ -32,11 +34,14 @@ dl_method = ''
 update_max = 0
 start_page = False
 i_page = 1
+search_mode = 'title'
 
 info = subprocess.STARTUPINFO()
 info.dwFlags = 1
 info.wShowWindow = 0
 main_pid = int()
+total_books = int()
+total_dl_success = 0
 
 retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 3
 headers = {
@@ -117,7 +122,9 @@ def banner():
 def enumerate():
     """ Used to measure multiple instances of progress """
 
-    global page_max, search_q
+    global page_max, search_q, total_books
+    print('-' * 100)
+    print(get_dt() + '[ENUMERATION]')
     i_page = 1
     add_page = True
     ids_n = []
@@ -125,7 +132,7 @@ def enumerate():
         ids = []
         library_ = Library()
         try:
-            ids = library_.search(query=search_q, mode='title', page=i_page, per_page=100)
+            ids = library_.search(query=search_q, mode=search_mode, page=i_page, per_page=100)
             print(get_dt() + '[PAGE] ' + str(i_page))
             print(get_dt() + '[BOOK IDs] ' + str(ids))
             for _ in ids:
@@ -139,21 +146,23 @@ def enumerate():
             page_max += 1
             i_page += 1
     print('-' * 100)
+    print(get_dt() + '[ENUMERATION SUMMARY]')
     print(get_dt() + '[KEYWORD] ' + str(search_q))
     print(get_dt() + '[BOOKS] ' + str(len(ids_n)))
+    total_books = str(len(ids_n))
     print('-' * 100)
 
 
 def compile_ids(search_q, i_page):
     global ids_
+    print('-' * 100)
+    print(get_dt() + '[COMPILE IDS]')
     ids_ = []
     f_dir = './library_genesis/' + search_q + '/'
 
     library_ = Library()
     try:
-        ids = library_.search(query=search_q, mode='title', page=i_page, per_page=100)
-        print(get_dt() + '[PAGE] ' + str(i_page))
-        print(get_dt() + '[BOOK IDs] ' + str(ids))
+        ids = library_.search(query=search_q, mode=search_mode, page=i_page, per_page=100)
         ids_ = ids
 
     except Exception as e:
@@ -162,19 +171,21 @@ def compile_ids(search_q, i_page):
         compile_ids(search_q, i_page)
 
     lookup_ids = library_.lookup(ids_)
-    print('-' * 100)
     print(get_dt() + '[PAGE] ' + str(i_page))
     print(get_dt() + '[BOOKS] ' + str(len(ids_)))
     print('-' * 100)
 
     if ids_:
+        print('ids_', ids_)
+        if not os.path.exists('./library_genesis'):
+            os.mkdir('./library_genesis')
         if not os.path.exists(f_dir):
             os.mkdir(f_dir)
         dl_books(search_q, f_dir, lookup_ids)
 
 
 def dl(href, save_path, str_filesize, filesize, title, author, year):
-    global max_retry, max_retry_i
+    global max_retry, max_retry_i, total_dl_success
 
     dl_index(text=save_path, dl_status='False')
 
@@ -218,6 +229,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year):
     if int(dl_sz) == int(filesize):
         print(str(get_dt() + '[DOWNLOADED] ' + str(convert_bytes(int(dl_sz))) + ' / ' + str(convert_bytes(int(filesize)))))
         print(str(get_dt() + '[DOWNLOADED SUCCESSFULLY]'))
+        total_dl_success += 1
         dl_index(text=save_path, dl_status='True')
     else:
 
@@ -252,7 +264,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year):
 
 
 def dl_books(search_q, f_dir, lookup_ids):
-    global ids_, dl_method, max_retry_i
+    global ids_, dl_method, max_retry_i, no_md5, no_ext, failed, total_books
     i = 0
     i_update = 0
     save_path = ''
@@ -262,8 +274,9 @@ def dl_books(search_q, f_dir, lookup_ids):
             max_retry_i = 0
             print('-' * 100)
             if dl_method == 'keyword':
+                print(get_dt() + '[KEYWORD] ' + str(search_q))
                 print(get_dt() + '[PAGE] ' + str(i_page) + ' / ' + str(page_max))
-                print(get_dt() + '[PROGRESS] ' + str(i) + ' / ' + str(len(ids_)))
+                print(get_dt() + '[PROGRESS] ' + str(i) + ' / ' + str(len(ids_)) + ' (' + total_books + ')')
             elif dl_method == 'update':
                 i_update += 1
                 print(get_dt() + '[UPDATE] ' + str(search_q))
@@ -287,16 +300,13 @@ def dl_books(search_q, f_dir, lookup_ids):
             print(get_dt() + '[YEAR] ' + str(year))
 
             filesize = _.filesize
-            try:
-                print(get_dt() + '[FILE SIZE] ' + str(convert_bytes(int(filesize))))
-                str_filesize = str(convert_bytes(int(filesize)))
-            except:
-                pass
+            print(get_dt() + '[FILE SIZE] ' + str(convert_bytes(int(filesize))))
+            str_filesize = str(convert_bytes(int(filesize)))
 
             md5 = _.md5
             if md5 == '':
-                print(get_dt() + 'could not find md5, skipping')
-                failed.append([title, author, year])
+                print(get_dt() + '[md5] could not find md5, skipping')
+                no_md5.append([title, author, year])
                 break
             print(get_dt() + '[md5] ' + md5)
 
@@ -311,7 +321,6 @@ def dl_books(search_q, f_dir, lookup_ids):
                 idx = str(href).rfind('.')
                 _ext_ = str(href)[idx:]
                 for _ in sol_ext.ext_:
-                    # print(get_dt() + 'comparing:', _ext_, '--> list item:', str(_).strip().lower())
                     if not _ == '.html':
                         if str(noCase(_ext_).strip()) == '.' + str(_).strip().lower():
                             ext = '.' + str(_.lower())
@@ -358,11 +367,7 @@ def dl_books(search_q, f_dir, lookup_ids):
                     except Exception as e:
                         print(get_dt() + str(e))
                         failed.append([title, author, year, href])
-
-                        if not save_path == '':
-                            if os.path.exists(save_path):
-                                os.remove(save_path)
-                            dl_books(search_q, f_dir, lookup_ids)
+                        dl_books(search_q, f_dir, lookup_ids)
                 else:
                     skip_dl = False
                     non_indexed = True
@@ -381,8 +386,6 @@ def dl_books(search_q, f_dir, lookup_ids):
                                 skip_dl = False
 
                     fo.close()
-                    # print('non_indexed:', non_indexed)
-                    # print('skip_dl:', skip_dl)
 
                     if non_indexed is True:
                         """ if the file already exists and is not indexed then leave the file alone! """
@@ -402,23 +405,35 @@ def dl_books(search_q, f_dir, lookup_ids):
                             dl(href, save_path, str_filesize, filesize, title, author, year)
                         except Exception as e:
                             print(get_dt() + str(e))
-                            failed.append([title, author, year, href])
-
                             dl_books(search_q, f_dir, lookup_ids)
                     fo.close()
 
             else:
-                failed.append([title, author, year, href])
+                no_ext.append([title, author, year, href])
         except Exception as e:
             print(get_dt() + str(e))
-            try:
-                failed.append([_.title, _.author, _.year, href])
-            except Exception as e:
-                print(get_dt() + str(e))
-
             dl_books(search_q, f_dir, lookup_ids)
 
-        # i += 1
+
+def summary():
+    print('')
+    print('-' * 100)
+    print('')
+    print(get_dt() + '[SUMMARY]')
+    print('')
+    if no_md5:
+        print(get_dt() + '[MD5] This list is of urls that had no md5 and so were skipped:')
+        for _ in no_md5:
+            print('    ' + str(_))
+    if no_ext:
+        print(get_dt() + '[EXTENSIONS] This list is of urls that had no file extension and so were skipped:')
+        for _ in no_ext:
+            print('    ' + str(_))
+    print(get_dt() + '[TOTAL DOWNLOADED] ' + str(total_dl_success))
+    print('')
+    print(get_dt() + '[COMPLETE]')
+    print('')
+    print('-' * 100)
 
 
 # Help menu
@@ -436,15 +451,27 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('                   be used as a keyword during update process.')
     print('    -p             Page. Specify start page number.')
     print('    --retry-max    Max number of retries for an incomplete download.')
+    print('                   Can be set to no-limit to keep trying if an exception is encountered.')
+    print('                   Default is 3. If --retry-max unspecified then default value will be used.')
+    print('    --search-mode  Specify search mode.')
+    print('                   --search-mode title')
+    print('                   --search-mode author')
+    print('                   --search-mode isbn')
+    print('                   Default is title. If --search-mode unspecified then default value will be used.')
     print('')
     print('    Example: library_genesis -k human')
     print('    Example: library_genesis -p 3 -k human')
+    print('    Example: library_genesis --retry-max no-limit --search-mode title -k human')
     print('    Example: library_genesis -u')
     print('')
 
 # Parse arguments
 run_function = ()
 i = 0
+run_function = 0
+retry_max_ = ''
+search_mode_ = ''
+i_page_ = ''
 for _ in sys.argv:
 
     # keyword
@@ -458,21 +485,41 @@ for _ in sys.argv:
             i_2 += 1
         print(get_dt() + '[Search] ' + str(str_))
         search_q = str_
-        run_function = 0
         break
 
     elif _ == '-p':
-        i_page = int(sys.argv[i+1])
+        i_page_ = str(sys.argv[i+1])
+        if i_page_.isdigit():
+            i_page = int(sys.argv[i+1])
+        else:
+            run_function = 4
 
     elif _ == '--retry-max':
+        retry_max_ = sys.argv[i + 1]
         if str(sys.argv[i+1]).isdigit():
             max_retry = int(sys.argv[i+1])
         elif str(sys.argv[i+1]) == 'no-limit':
             max_retry = str(sys.argv[i+1])
+        else:
+            run_function = 2
+
+    elif _ == '--search-mode':
+        search_mode_ = sys.argv[i+1]
+        if sys.argv[i+1] == 'title':
+            search_mode = sys.argv[i+1]
+        elif sys.argv[i+1] == 'author':
+            search_mode = sys.argv[i+1]
+        elif sys.argv[i+1] == 'isbn':
+            search_mode = sys.argv[i+1]
+        else:
+            run_function = 3
 
     # update
     elif _ == '-u':
-        run_function = 1
+        if len(sys.argv) == 2:
+            run_function = 1
+        else:
+            run_function = 5
         break
     i += 1
 
@@ -483,19 +530,10 @@ if run_function == 0:
     if page_max >= 1:
         dl_method = 'keyword'
         # i_page = 1
-        while i_page < page_max:
+        while i_page <= page_max:
             compile_ids(search_q, i_page)
             i_page += 1
-    print('')
-    print('-' * 100)
-    if failed:
-        print('')
-        print(get_dt() + 'may have failed (check to confirm):')
-        for _ in failed:
-            print('   ', _)
-        print(get_dt() + 'may have failed: ' + str(len(failed)))
-
-    print(get_dt() + 'completed.')
+    summary()
 
 elif run_function == 1:
     banner()
@@ -515,4 +553,15 @@ elif run_function == 1:
         print(get_dt() + '[updating] ' + str(_))
         compile_ids(search_q[i_query], i_page)
         i_query += 1
-print('\n\n')
+    summary()
+
+elif run_function == 2:
+    print(get_dt() + '[failed] --retry-max cannot be ' + retry_max_)
+elif run_function == 3:
+    print(get_dt() + '[failed] --search-mode cannot be ' + search_mode_)
+elif run_function == 4:
+    print(get_dt() + '[failed] -p cannot be ' + i_page_)
+elif run_function == 5:
+    print(get_dt() + '[failed] update switch takes no other arguments.')
+
+print('\n')
