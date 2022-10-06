@@ -22,6 +22,9 @@ import sol_ext
 
 socket.setdefaulttimeout(15)
 
+if not os.path.exists('./dl_index.txt'):
+    open('./dl_index.txt', 'w').close()
+
 
 run_function = 0
 max_retry = 3
@@ -438,6 +441,7 @@ def summary():
     print(get_dt() + '[COMPLETE]')
     print('')
     print('-' * 100)
+
 
 # Help menu
 if len(sys.argv) == 2 and sys.argv[1] == '-h':
