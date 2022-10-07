@@ -1,6 +1,26 @@
 """
 Written by Benjamin Jack Cullen aka Holographic_Sol
 
+- cli library genesis mass book downloader.
+- attempts to download every book on every page.
+- download all books by author
+- download all books by title
+- download all books by isbn
+- downloads book covers
+- displays multi-level download progress
+- stores books in directory names according to specified title/author/isbn from command line arguments. (categorized).
+- optionally choose library genesis search results page to start downloading all books from (default page 1), save time.
+- uses various means to keep track of what already exists in the book library:
+    - what book should be downloaded
+    - what book has been downloaded already
+    - what book started downloading and possibly did not finnish (reboots, power etc..)
+    - what book/files to leave alone (already exists but book id not in download file, etc..)
+        - dl_id.txt and or book_id.txt may be deleted and this program should still pick up where it left off, however
+        'skipping' over existing files may take slightly longer as tagged values will have to be used to create the
+        save path (among other operations including a file exist check) before the program can ascertain if the book
+        will be skipped or downloaded.
+        - recommended to keep book_id.txt unless it grows to large.
+
 """
 import datetime
 import os
@@ -14,7 +34,6 @@ import urllib3
 import unicodedata
 import subprocess
 import socket
-import fileinput
 import sol_ext
 
 socket.setdefaulttimeout(15)
@@ -23,29 +42,32 @@ if not os.path.exists('./dl_id.txt'):
     open('./dl_id.txt', 'w').close()
 
 
-cwd = os.getcwd()
 run_function = 0
 max_retry = 3
 max_retry_i = 0
+total_books = int()
+total_dl_success = 0
+update_max = 0
+i_page = 1
+page_max = 0
+total_i = 0
+
+book_id_store = []
 no_ext = []
 no_md5 = []
 failed = []
 ids_ = []
+
+cwd = os.getcwd()
 search_q = ''
-page_max = 0
 dl_method = ''
-update_max = 0
-start_page = False
-i_page = 1
 search_mode = 'title'
-total_i = 0
+
+start_page = False
 
 info = subprocess.STARTUPINFO()
 info.dwFlags = 1
 info.wShowWindow = 0
-main_pid = int()
-total_books = int()
-total_dl_success = 0
 
 retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 3
 headers = {
@@ -57,32 +79,51 @@ headers = {
 
 
 def get_dt():
+    """ create a datetime string """
     dt = datetime.datetime.now()
     dt = '[' + str(dt) + '] '
     return dt
 
 
-def book_id_check(book_id):
+def book_id_check(book_id, check_type):
+    """ check if book id in file/memory """
+
+    global book_id_store
     if not os.path.exists('./book_id.txt'):
         open('./book_id.txt', 'w').close()
+
     bool_book_id_check = False
-    with open('./book_id.txt', 'r') as fo:
-        for line in fo:
-            line = line.strip()
-            if line == str(book_id):
-                bool_book_id_check = True
-                break
-    fo.close()
+    if check_type == 'read-file':
+        with open('./book_id.txt', 'r') as fo:
+            for line in fo:
+                line = line.strip()
+                if line == str(book_id):
+                    bool_book_id_check = True
+                    break
+                book_id_store.append(line)
+        fo.close()
+
+    elif check_type == 'memory':
+        if book_id in book_id_store:
+            bool_book_id_check = True
     return bool_book_id_check
 
 
 def add_book_id(book_id):
+    """ add book id to file and list in memory """
+
+    global book_id_store
+    if not os.path.exists('./book_id.txt'):
+        open('./book_id.txt', 'w').close()
+
     with open('./book_id.txt', 'a') as fo:
         fo.write(str(book_id) + '\n')
     fo.close()
+    book_id_store.append(book_id)
 
 
 def dl_id_check(book_id):
+    """ check if book id in download file  """
     if not os.path.exists('./dl_id.txt'):
         open('./dl_id.txt', 'w').close()
 
@@ -100,23 +141,30 @@ def dl_id_check(book_id):
 
 
 def add_dl_id(book_id):
+    """" add book id to download file """
+
     if not os.path.exists('./dl_id.txt'):
         open('./dl_id.txt', 'w').close()
+
     with codecs.open(cwd+'/dl_id.txt', 'a', encoding='utf8') as fo:
         fo.write(book_id + '\n')
     fo.close()
 
 
 def rem_dl_id(book_id):
-    new = []
+    """" remove book id from download file """
+
     if not os.path.exists('./dl_id.txt'):
         open('./dl_id.txt', 'w').close()
+
+    new = []
     with open('./dl_id.txt', 'r') as fo:
         for line in fo:
             line = line.strip()
             if line != book_id:
                 new.append(line)
     fo.close()
+
     open('./dl_id.txt', 'w').close()
     with open('./dl_id.txt', 'a') as fo:
         for _ in new:
@@ -125,6 +173,8 @@ def rem_dl_id(book_id):
 
 
 def clear_console():
+    """ clears console """
+
     command = 'clear'
     if os.name in ('nt', 'dos'):  # If Machine is running on Windows, use cls
         command = 'cls'
@@ -132,10 +182,14 @@ def clear_console():
 
 
 def clear_console_line(char_limit):
+    """ clear n chars from console """
+
     print(' '*char_limit, end='\r', flush=True)
 
 
 def pr_technical_data(technical_data, char_limit):
+    """ print n chars to console after running clear_console_line """
+
     technical_data = technical_data[:char_limit]
     print(technical_data, end='\r', flush=True)
 
@@ -149,6 +203,8 @@ def noCase(text):
 
 
 def convert_bytes(num):
+    """ bytes for humans """
+
     for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
         if num < 1024.0:
             return str(num)+' '+x
@@ -161,8 +217,8 @@ def banner():
     print('')
 
 
-def enumerate():
-    """ Used to measure multiple instances of progress """
+def enumerate_ids():
+    """ Used to measure multiple instances/types of progress during download """
 
     global page_max, search_q, total_books
     print('-' * 100)
@@ -196,6 +252,8 @@ def enumerate():
 
 
 def compile_ids(search_q, i_page):
+    """ compile a fresh set of book ids per page (prevents overloading request) """
+
     global ids_
     print('-' * 100)
     print(get_dt() + '[COMPILE IDS]')
@@ -223,10 +281,12 @@ def compile_ids(search_q, i_page):
             os.mkdir('./library_genesis')
         if not os.path.exists(f_dir):
             os.mkdir(f_dir)
-        dl_books(search_q, f_dir, lookup_ids)
+        enumerate_book(search_q, f_dir, lookup_ids)
 
 
 def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
+    """ attempts to download a book with n retries according to --retry-max """
+
     global max_retry, max_retry_i, total_dl_success
 
     if dl_id_check(book_id=book_id) is False:
@@ -276,10 +336,10 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
         rem_dl_id(book_id=book_id)
 
-        if book_id_check(book_id=book_id) is False:
+        if book_id_check(book_id=book_id, check_type='memory') is False:
             add_book_id(book_id)
-    else:
 
+    else:
         clear_console_line(char_limit=char_limit)
         pr_str = str(get_dt() + '[DOWNLOADED FAILED]')
         pr_technical_data(pr_str, char_limit=int(len(pr_str)))
@@ -310,7 +370,9 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
             dl(href, save_path, str_filesize, filesize, title, author, year, book_id)
 
 
-def dl_books(search_q, f_dir, lookup_ids):
+def enumerate_book(search_q, f_dir, lookup_ids):
+    """ obtains book details using book id and calls dl function if certain conditions are met """
+
     global ids_, dl_method, max_retry_i, no_md5, no_ext, failed, total_books, total_i
     i = 0
     i_update = 0
@@ -336,7 +398,7 @@ def dl_books(search_q, f_dir, lookup_ids):
             print(get_dt() + '[ID] ' + str(book_id))
 
             bool_dl_id_check = dl_id_check(book_id=book_id)
-            bool_book_id_check = book_id_check(book_id=book_id)
+            bool_book_id_check = book_id_check(book_id=book_id, check_type='memory')
             print(get_dt() + '[CHECK DL_ID] ' + str(bool_dl_id_check))
             print(get_dt() + '[CHECK BOOK_ID] ' + str(bool_book_id_check))
 
@@ -435,7 +497,7 @@ def dl_books(search_q, f_dir, lookup_ids):
                         except Exception as e:
                             print(get_dt() + str(e))
                             failed.append([title, author, year, href])
-                            dl_books(search_q, f_dir, lookup_ids)
+                            enumerate_book(search_q, f_dir, lookup_ids)
 
                     else:
                         """ Block to preserve existing file with the same name that is also not mentioned in dl_id """
@@ -444,12 +506,12 @@ def dl_books(search_q, f_dir, lookup_ids):
                 else:
                     print(get_dt() + '[SKIPPING] URL with compatible file extension could not be found')
 
-            elif book_id_check(book_id=book_id) is True:
+            elif book_id_check(book_id=book_id, check_type='memory') is True:
                 print(get_dt() + '[SKIPPING] Book is registered in book_id')
 
         except Exception as e:
             print(get_dt() + str(e))
-            dl_books(search_q, f_dir, lookup_ids)
+            enumerate_book(search_q, f_dir, lookup_ids)
 
 
 def summary():
@@ -482,14 +544,16 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print('Command line arguments:\n')
     print('    -h             Displays this help message.')
-    print('    -k             Keyword. Specify keyword(s).')
-    print('    -u             Update. Update an existing library genesis directory.')
+    print('    -k             Keyword. Specify keyword(s). Should always be the last argument. Anything after -k will')
+    print('                   be treated as a keyword(s).')
+    print('    -u             Update. Update an existing library genesis directory. Takes no further arguments.')
     print('                   Each directory name in an existing ./library_genesis directory will')
     print('                   be used as a keyword during update process.')
     print('    -p             Page. Specify start page number.')
     print('    --retry-max    Max number of retries for an incomplete download.')
     print('                   Can be set to no-limit to keep trying if an exception is encountered.')
     print('                   Default is 3. If --retry-max unspecified then default value will be used.')
+    print('                   Recommended only using no-limit unless issues are encountered.')
     print('    --search-mode  Specify search mode.')
     print('                   --search-mode title')
     print('                   --search-mode author')
@@ -566,17 +630,18 @@ for _ in sys.argv:
 
 # Keyword download
 if run_function == 0:
+    book_id_check(book_id='', check_type='read-file')
     search_q = search_q.strip()
-    enumerate()
+    enumerate_ids()
     if page_max >= 1:
         dl_method = 'keyword'
-        # i_page = 1
         while i_page <= page_max:
             compile_ids(search_q, i_page)
             i_page += 1
     summary()
 
 elif run_function == 1:
+    book_id_check(book_id='', check_type='read-file')
     banner()
     print(get_dt() + '[Update Library]')
     update_max = 0
