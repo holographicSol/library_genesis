@@ -246,9 +246,9 @@ def dl(href, save_path, str_filesize, filesize, title, author, year):
         pass
 
     if int(dl_sz) == int(filesize):
+        total_dl_success += 1
         print(str(get_dt() + '[DOWNLOADED] ' + str(convert_bytes(int(dl_sz))) + ' / ' + str(convert_bytes(int(filesize)))))
         print(str(get_dt() + '[DOWNLOADED SUCCESSFULLY]'))
-        total_dl_success += 1
         dl_index(save_path=save_path, dl_status='True')
     else:
 
@@ -381,7 +381,7 @@ def dl_books(search_q, f_dir, lookup_ids):
                 # dl book
                 if not os.path.exists(save_path):
                     print(get_dt() + '[CHECK] File does not already exist. Attempting download.')
-                    print(get_dt() + '[SAVING] ' + str(save_path))
+                    print(get_dt() + '[SAVING] [NEW] ' + str(save_path))
                     try:
                         dl(href, save_path, str_filesize, filesize, title, author, year)
                     except Exception as e:
@@ -389,33 +389,23 @@ def dl_books(search_q, f_dir, lookup_ids):
                         failed.append([title, author, year, href])
                         dl_books(search_q, f_dir, lookup_ids)
                 else:
-                    skip_dl = False
-                    non_indexed = True
+                    skip_dl = True
                     with open('./dl_index.txt', 'r') as fo:
                         for line in fo:
                             line = line.strip()
-
                             if line == save_path + ' False':
-                                # print('comparing:', line, ' --> ', save_path + ' ' + 'Bool')
-                                non_indexed = False
                                 skip_dl = False
-
                     fo.close()
 
-                    if non_indexed is True:
+                    if skip_dl is True:
                         """ if the file already exists and is not indexed then leave the file alone! """
                         print(get_dt() + '[CHECK] File exists however this program will leave it alone.')
                         print(get_dt() + '[SKIPPING]')
 
-                    elif skip_dl is True and non_indexed is False:
-                        """ if the file already exists and has been completed according to dl_index """
-                        print(get_dt() + '[CHECK] File exists however the index says the downlaod was successful.')
-                        print(get_dt() + '[SKIPPING]')
-
-                    elif skip_dl is False and non_indexed is False:
+                    elif skip_dl is False:
                         """ if the file already exists and has not been completed according to dl_index """
                         print(get_dt() + '[CHECK] File exists. Attempting re-download as download incomplete according to index.')
-                        print(get_dt() + '[SAVING] ' + str(save_path))
+                        print(get_dt() + '[SAVING] [RETRY] ' + str(save_path))
                         try:
                             dl(href, save_path, str_filesize, filesize, title, author, year)
                         except Exception as e:
