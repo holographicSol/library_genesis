@@ -35,6 +35,7 @@ import unicodedata
 import subprocess
 import socket
 import sol_ext
+import pyprogress
 
 socket.setdefaulttimeout(15)
 
@@ -187,10 +188,11 @@ def clear_console_line(char_limit):
     print(' '*char_limit, end='\r', flush=True)
 
 
-def pr_technical_data(technical_data, char_limit):
+def pr_technical_data(technical_data):  #, char_limit):
+
     """ print n chars to console after running clear_console_line """
 
-    technical_data = technical_data[:char_limit]
+    # technical_data = technical_data[:char_limit]
     print(technical_data, end='\r', flush=True)
 
 
@@ -311,16 +313,20 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                 out.write(data)
                 dl_sz += int(len(data))
 
-                clear_console_line(char_limit=char_limit)
-                pr_str = str(get_dt() + '[DOWNLOADING BOOK] ' + str(convert_bytes(int(dl_sz))) + str(' / ') + str_filesize)
-                pr_technical_data(pr_str, char_limit=int(len(pr_str)))
-                char_limit = int(len(pr_str))
+                pyprogress.progress_bar(part=int(dl_sz), whole=int(filesize),
+                                        pre_append=str('[DOWNLOADING BOOK] '),
+                                        append=str(' ' + str(convert_bytes(int(dl_sz))) + ' / ' + str_filesize),
+                                        encapsulate_l='|',
+                                        encapsulate_r='|',
+                                        progress_char=' ',
+                                        bg_color='GREEN',
+                                        size=25)
 
         except Exception as e:
             e = str(e)
             clear_console_line(char_limit=char_limit)
             pr_str = str(get_dt() + '[ERROR]')
-            pr_technical_data(pr_str, char_limit=int(len(pr_str)))
+            pr_technical_data(pr_str)  #, char_limit=int(len(pr_str)))
             char_limit = int(len(pr_str))
 
     out.close()
@@ -342,7 +348,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
     else:
         clear_console_line(char_limit=char_limit)
         pr_str = str(get_dt() + '[DOWNLOADED FAILED]')
-        pr_technical_data(pr_str, char_limit=int(len(pr_str)))
+        pr_technical_data(pr_str)  #, char_limit=int(len(pr_str)))
         char_limit = int(len(pr_str))
 
         failed.append([title, author, year, href])
@@ -353,7 +359,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
                 clear_console_line(char_limit=char_limit)
                 pr_str = str(get_dt() + '[RETRYING] ' + str(max_retry_i)) + ' / ' + str(max_retry)
-                pr_technical_data(pr_str, char_limit=int(len(pr_str)))
+                pr_technical_data(pr_str)  #, char_limit=int(len(pr_str)))
                 char_limit = int(len(pr_str))
 
                 time.sleep(5)
@@ -363,7 +369,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
             clear_console_line(char_limit=char_limit)
             pr_str = str(get_dt() + '[RETRYING] ' + str(max_retry_i)) + ' / ' + str(max_retry)
-            pr_technical_data(pr_str, char_limit=int(len(pr_str)))
+            pr_technical_data(pr_str)  #, char_limit=int(len(pr_str)))
             char_limit = int(len(pr_str))
 
             time.sleep(5)
@@ -553,7 +559,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('    --retry-max    Max number of retries for an incomplete download.')
     print('                   Can be set to no-limit to keep trying if an exception is encountered.')
     print('                   Default is 3. If --retry-max unspecified then default value will be used.')
-    print('                   Recommended only using no-limit unless issues are encountered.')
+    print('                   Using no-limit is always recommended. If issues are encountered then specify number.')
     print('    --search-mode  Specify search mode.')
     print('                   --search-mode title')
     print('                   --search-mode author')
@@ -565,7 +571,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('    Example: library_genesis --retry-max no-limit --search-mode title -k human')
     print('    Example: library_genesis -u')
     print('')
-    run_function = 999
+    run_function = 1984
 
 # Parse arguments
 run_function = ()
