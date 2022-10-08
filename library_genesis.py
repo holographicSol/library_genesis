@@ -36,8 +36,10 @@ import subprocess
 import socket
 import sol_ext
 import pyprogress
+import colorama
 
 socket.setdefaulttimeout(15)
+colorama.init()
 
 if not os.path.exists('./dl_id.txt'):
     open('./dl_id.txt', 'w').close()
@@ -188,11 +190,10 @@ def clear_console_line(char_limit):
     print(' '*char_limit, end='\r', flush=True)
 
 
-def pr_technical_data(technical_data):  #, char_limit):
+def pr_technical_data(technical_data):
 
     """ print n chars to console after running clear_console_line """
 
-    # technical_data = technical_data[:char_limit]
     print(technical_data, end='\r', flush=True)
 
 
@@ -320,13 +321,13 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                                         encapsulate_r='|',
                                         progress_char=' ',
                                         bg_color='GREEN',
-                                        size=25)
+                                        size=50)
 
         except Exception as e:
             e = str(e)
             clear_console_line(char_limit=char_limit)
             pr_str = str(get_dt() + '[ERROR]')
-            pr_technical_data(pr_str)  #, char_limit=int(len(pr_str)))
+            pr_technical_data(pr_str)
             char_limit = int(len(pr_str))
 
     out.close()
@@ -338,7 +339,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
     if int(dl_sz) == int(filesize):
         total_dl_success += 1
         print(str(get_dt() + '[DOWNLOADED] ' + str(convert_bytes(int(dl_sz))) + ' / ' + str(convert_bytes(int(filesize)))))
-        print(str(get_dt() + '[DOWNLOADED SUCCESSFULLY]'))
+        print(str(get_dt() + colorama.Style.BRIGHT + colorama.Fore.GREEN + '[DOWNLOADED SUCCESSFULLY]' + colorama.Style.RESET_ALL))
 
         rem_dl_id(book_id=book_id)
 
@@ -348,7 +349,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
     else:
         clear_console_line(char_limit=char_limit)
         pr_str = str(get_dt() + '[DOWNLOADED FAILED]')
-        pr_technical_data(pr_str)  #, char_limit=int(len(pr_str)))
+        pr_technical_data(pr_str)
         char_limit = int(len(pr_str))
 
         failed.append([title, author, year, href])
@@ -359,7 +360,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
                 clear_console_line(char_limit=char_limit)
                 pr_str = str(get_dt() + '[RETRYING] ' + str(max_retry_i)) + ' / ' + str(max_retry)
-                pr_technical_data(pr_str)  #, char_limit=int(len(pr_str)))
+                pr_technical_data(pr_str)
                 char_limit = int(len(pr_str))
 
                 time.sleep(5)
@@ -369,7 +370,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
             clear_console_line(char_limit=char_limit)
             pr_str = str(get_dt() + '[RETRYING] ' + str(max_retry_i)) + ' / ' + str(max_retry)
-            pr_technical_data(pr_str)  #, char_limit=int(len(pr_str)))
+            pr_technical_data(pr_str)
             char_limit = int(len(pr_str))
 
             time.sleep(5)
@@ -450,7 +451,7 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                         if not _ == '.html':
                             if str(noCase(_ext_).strip()) == '.' + str(_).strip().lower():
                                 ext = '.' + str(_.lower())
-                                print(get_dt() + '[URL] ' + str(href))
+                                # print(get_dt() + '[URL] ' + str(href))
                                 break
                     break
 
