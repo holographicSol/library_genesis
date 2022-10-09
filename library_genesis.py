@@ -323,7 +323,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                                         encapsulate_r_color='LIGHTCYAN_EX',
                                         progress_char=' ',
                                         bg_color='GREEN',
-                                        size=50)
+                                        factor=50)
 
         except Exception as e:
             e = str(e)
