@@ -315,10 +315,12 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                 dl_sz += int(len(data))
 
                 pyprogress.progress_bar(part=int(dl_sz), whole=int(filesize),
-                                        pre_append=str('[DOWNLOADING BOOK] '),
+                                        pre_append='[DOWNLOADING BOOK] ',
                                         append=str(' ' + str(convert_bytes(int(dl_sz))) + ' / ' + str_filesize),
                                         encapsulate_l='|',
                                         encapsulate_r='|',
+                                        encapsulate_l_color='LIGHTCYAN_EX',
+                                        encapsulate_r_color='LIGHTCYAN_EX',
                                         progress_char=' ',
                                         bg_color='GREEN',
                                         size=50)
@@ -338,7 +340,8 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
     if int(dl_sz) == int(filesize):
         total_dl_success += 1
-        print(str(get_dt() + '[DOWNLOADED] ' + str(convert_bytes(int(dl_sz))) + ' / ' + str(convert_bytes(int(filesize)))))
+        pr_technical_data('')
+        print('\n')
         print(str(get_dt() + colorama.Style.BRIGHT + colorama.Fore.GREEN + '[DOWNLOADED SUCCESSFULLY]' + colorama.Style.RESET_ALL))
 
         rem_dl_id(book_id=book_id)
@@ -392,17 +395,17 @@ def enumerate_book(search_q, f_dir, lookup_ids):
             print('-' * 100)
             if dl_method == 'keyword':
                 print(get_dt() + '[KEYWORD] ' + str(search_q))
-                print(get_dt() + '[PAGE] ' + str(i_page) + ' / ' + str(page_max))
-                print(get_dt() + '[PROGRESS] ' + str(i) + ' / ' + str(len(ids_)) + ' (' + str(total_books) + ')')
+                print(get_dt() + '[PAGE] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_page) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(page_max) + colorama.Style.RESET_ALL)
+                print(get_dt() + '[PROGRESS] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(len(ids_)) + colorama.Style.RESET_ALL + ' (' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(total_books) + colorama.Style.RESET_ALL + ')')
             elif dl_method == 'update':
                 i_update += 1
                 print(get_dt() + '[UPDATE] ' + str(search_q))
-                print(get_dt() + '[PROGRESS] ' + str(i_update) + ' / ' + str(update_max))
+                print(get_dt() + '[PROGRESS] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_update) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(update_max) + colorama.Style.RESET_ALL)
 
             # print(_.__dict__)
 
             book_id = _.id
-            print(get_dt() + '[ID] ' + str(book_id))
+            print(get_dt() + '[BOOK ID] ' + str(book_id))
 
             bool_dl_id_check = dl_id_check(book_id=book_id)
             bool_book_id_check = book_id_check(book_id=book_id, check_type='memory')
@@ -414,12 +417,12 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                 title = _.title.strip()
                 if title == '':
                     title = 'unknown_title'
-                print(get_dt() + '[TITLE] ' + str(title))
+                print(get_dt() + '[TITLE] ' + colorama.Style.BRIGHT + colorama.Fore.CYAN + str(title) + colorama.Style.RESET_ALL)
 
                 author = _.author.strip()
                 if author == '':
                     author = 'unknown_author'
-                print(get_dt() + '[AUTHOR] ' + str(author))
+                print(get_dt() + '[AUTHOR] ' + colorama.Style.BRIGHT + colorama.Fore.CYAN + str(author) + colorama.Style.RESET_ALL)
 
                 year = _.year.strip()
                 if year == '0' or not year:
@@ -473,7 +476,8 @@ def enumerate_book(search_q, f_dir, lookup_ids):
 
                     # dl book cover
                     if not os.path.exists(save_path_img):
-                        print(get_dt() + '[SAVING] [COVER] ' + str(save_path_img))
+                        # print(get_dt() + '[SAVING] [COVER] ' + str(save_path_img))  # uncomment to display path
+                        print(get_dt() + '[SAVING] [COVER]')
                         http = urllib3.PoolManager(retries=retries)
                         r = http.request('GET', img_, preload_content=False, headers=headers)
                         with open(save_path_img, 'wb') as fo:
@@ -489,12 +493,14 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                     allow_dl = False
                     if bool_dl_id_check is False and not os.path.exists(str(save_path)):
                         """ Book ID not in book_id.txt and not in dl_id.txt and save path does not exist """
-                        print(get_dt() + '[SAVING] [NEW] ' + str(save_path))
+                        # print(get_dt() + '[SAVING] [NEW] ' + str(save_path))  # uncomment to display path
+                        print(get_dt() + '[SAVING] [NEW]')
                         allow_dl = True
 
                     elif bool_dl_id_check is True:
                         """ Book ID in dl_id.txt (overwrite an existing file if save path exists already) """
-                        print(get_dt() + '[SAVING] [RETRYING] ' + str(save_path))
+                        # print(get_dt() + '[SAVING] [RETRYING] ' + str(save_path))  # uncomment to display path
+                        print(get_dt() + '[SAVING] [RETRYING]')
                         allow_dl = True
 
                     if allow_dl is True:
@@ -678,3 +684,4 @@ elif run_function == 5:
     print(get_dt() + '[failed] update switch takes no other arguments.')
 
 print('\n')
+colorama.Style.RESET_ALL
