@@ -73,6 +73,8 @@ info.dwFlags = 1
 info.wShowWindow = 0
 
 retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 3
+multiplier = pyprogress.multiplier_from_inverse_factor(factor=50)
+
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
@@ -303,7 +305,6 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
         try:
             http = urllib3.PoolManager(retries=retries)
             r = http.request('GET', href, preload_content=False, headers=headers)
-
             while True:
                 data = r.read(10000)
 
@@ -314,16 +315,20 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                 out.write(data)
                 dl_sz += int(len(data))
 
-                pyprogress.progress_bar(part=int(dl_sz), whole=int(filesize),
-                                        pre_append='[DOWNLOADING BOOK] ',
-                                        append=str(' ' + str(convert_bytes(int(dl_sz))) + ' / ' + str_filesize),
-                                        encapsulate_l='|',
-                                        encapsulate_r='|',
-                                        encapsulate_l_color='LIGHTCYAN_EX',
-                                        encapsulate_r_color='LIGHTCYAN_EX',
-                                        progress_char=' ',
-                                        bg_color='GREEN',
-                                        factor=50)
+                try:
+                    pyprogress.progress_bar(part=int(dl_sz), whole=int(filesize),
+                                            pre_append='[DOWNLOADING BOOK] ',
+                                            append=str(' ' + str(convert_bytes(int(dl_sz))) + ' / ' + str_filesize),
+                                            encapsulate_l='|',
+                                            encapsulate_r='|',
+                                            encapsulate_l_color='LIGHTCYAN_EX',
+                                            encapsulate_r_color='LIGHTCYAN_EX',
+                                            progress_char=' ',
+                                            bg_color='GREEN',
+                                            factor=50,
+                                            multiplier=multiplier)
+                except Exception as e:
+                    print(e)
 
         except Exception as e:
             e = str(e)
