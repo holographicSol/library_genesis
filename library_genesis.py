@@ -54,6 +54,8 @@ update_max = 0
 i_page = 1
 page_max = 0
 total_i = 0
+limit_speed = 0
+human_limit_speed = ''
 
 book_id_store = []
 no_ext = []
@@ -292,7 +294,7 @@ def compile_ids(search_q, i_page):
 def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
     """ attempts to download a book with n retries according to --retry-max """
 
-    global max_retry, max_retry_i, total_dl_success
+    global max_retry, max_retry_i, total_dl_success, limit_speed
 
     if dl_id_check(book_id=book_id) is False:
         add_dl_id(book_id=book_id)
@@ -306,7 +308,13 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
             http = urllib3.PoolManager(retries=retries)
             r = http.request('GET', href, preload_content=False, headers=headers)
             while True:
-                data = r.read(10000)
+
+                if limit_speed == 0:
+                    data = r.read(10000)
+                    pre_append = '[DOWNLOADING BOOK] '
+                else:
+                    data = r.read(limit_speed)
+                    pre_append = '[DOWNLOADING BOOK] [THROTTLING ' + str(human_limit_speed) + '] '
 
                 if not data:
                     dl_sz += int(len(data))
@@ -317,7 +325,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
                 try:
                     pyprogress.progress_bar(part=int(dl_sz), whole=int(filesize),
-                                            pre_append='[DOWNLOADING BOOK] ',
+                                            pre_append=pre_append,
                                             append=str(' ' + str(convert_bytes(int(dl_sz))) + ' / ' + str_filesize),
                                             encapsulate_l='|',
                                             encapsulate_r='|',
@@ -329,6 +337,9 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                                             multiplier=multiplier)
                 except Exception as e:
                     print(e)
+
+                if limit_speed != 0:
+                    time.sleep(1)
 
         except Exception as e:
             e = str(e)
@@ -561,26 +572,30 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('    Written by Benjamin Jack Cullen.')
     print('')
     print('Command line arguments:\n')
-    print('    -h             Displays this help message.')
+    print('    -h             Displays this help message.\n')
     print('    -k             Keyword. Specify keyword(s). Should always be the last argument. Anything after -k will')
-    print('                   be treated as a keyword(s).')
+    print('                   be treated as a keyword(s).\n')
     print('    -u             Update. Update an existing library genesis directory. Takes no further arguments.')
     print('                   Each directory name in an existing ./library_genesis directory will')
-    print('                   be used as a keyword during update process.')
-    print('    -p             Page. Specify start page number.')
+    print('                   be used as a keyword during update process.\n')
+    print('    -p             Page. Specify start page number.\n')
     print('    --retry-max    Max number of retries for an incomplete download.')
     print('                   Can be set to no-limit to keep trying if an exception is encountered.')
     print('                   Default is 3. If --retry-max unspecified then default value will be used.')
-    print('                   Using no-limit is always recommended. If issues are encountered then specify number.')
+    print('                   Using no-limit is always recommended. If issues are encountered then specify number.\n')
     print('    --search-mode  Specify search mode.')
     print('                   --search-mode title')
     print('                   --search-mode author')
     print('                   --search-mode isbn')
-    print('                   Default is title. If --search-mode unspecified then default value will be used.')
+    print('                   Default is title. If --search-mode unspecified then default value will be used.\n')
+    print('    --limit-speed  Throttle download speed. Specify bytes per second in digits.')
+    print('                   1024 bytes = 100KB. Use a calculator if you need it.')
+    print('                   Example: --limit-speed 1024')
+    print('                   Default is 0 (unlimited). If --limit-speed is unspecified then default value will be used.')
     print('')
     print('    Example: library_genesis -k human')
     print('    Example: library_genesis -p 3 -k human')
-    print('    Example: library_genesis --retry-max no-limit --search-mode title -k human')
+    print('    Example: library_genesis --limit-speed 1024 --retry-max no-limit --search-mode title -k human')
     print('    Example: library_genesis -u')
     print('')
     run_function = 1984
@@ -636,6 +651,11 @@ for _ in sys.argv:
             run_function = 0
         else:
             run_function = 3
+
+    elif _ == '--limit-speed':
+        if sys.argv[i+1].isdigit():
+            limit_speed = int(sys.argv[i+1])
+            human_limit_speed = str(convert_bytes(int(limit_speed)))
 
     # update
     elif _ == '-u':
