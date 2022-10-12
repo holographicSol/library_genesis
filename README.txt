@@ -7,23 +7,34 @@ Written by Benjamin Jack Cullen.
 Command line arguments:
 
 -h             Displays this help message.
+
 -k             Keyword. Specify keyword(s).
+
 -u             Update. Update an existing library genesis directory.
                Each directory name in an existing ./library_genesis directory will
                be used as a keyword during update process.
+
 -p             Page. Specify start page number.
+
 --retry-max    Max number of retries for an incomplete download.
                Can be set to no-limit to keep trying if an exception is encountered.
                Default is 3. If --retry-max unspecified then default value will be used.
+               Using no-limit is always recommended. If issues are encountered then specify number.
+
 --search-mode  Specify search mode.
                --search-mode title
                --search-mode author
                --search-mode isbn
                Default is title. If --search-mode unspecified then default value will be used.
 
+--limit-speed  Throttle download speed. Specify bytes per second in digits.
+               1024 bytes = 100KB. Use a calculator if you need it.
+               Example: --limit-speed 1024
+               Default is 0 (unlimited). If --limit-speed is unspecified then default value will be used.
+
 Example: library_genesis -k human
 Example: library_genesis -p 3 -k human
-Example: library_genesis --retry-max no-limit --search-mode title -k human
+Example: library_genesis --limit-speed 1024 --retry-max no-limit --search-mode title -k human
 Example: library_genesis -u
 
 
