@@ -36,7 +36,7 @@ Command line arguments:
                Example: --limit-speed 1024
                Default is 0 (unlimited). If --limit-speed is unspecified then default value will be used.
 
-RESEARCH OPTIONS]
+[RESEARCH OPTIONS]
 --research-mode    Specify research mode. Specify file/directory to research.
                    --research-mode file
                    --research-mode library
