@@ -1,13 +1,17 @@
-[LIBRARY GENESIS DOWNLOAD TOOL]
+[LIBRARY GENESIS DOWNLOAD & RESEARCH TOOL]
 
 Intended as an intelligence tool for archiving information in an uncertain world.
 Downloads every book on every page for keyword specified.
+Also provides function to compile and save a list of reading material relative to search terms(s)
+to aid and assist in research when dealing with large libraries.
+
 Written by Benjamin Jack Cullen.
 
 Command line arguments:
 
 -h             Displays this help message.
 
+[DOWNLOAD OPTIONS]
 -k             Keyword. Specify keyword(s).
 
 -u             Update. Update an existing library genesis directory.
@@ -32,10 +36,20 @@ Command line arguments:
                Example: --limit-speed 1024
                Default is 0 (unlimited). If --limit-speed is unspecified then default value will be used.
 
-Example: library_genesis -k human
-Example: library_genesis -p 3 -k human
-Example: library_genesis --limit-speed 1024 --retry-max no-limit --search-mode title -k human
-Example: library_genesis -u
+RESEARCH OPTIONS]
+--research-mode    Specify research mode. Specify file/directory to research.
+                   --research-mode file
+                   --research-mode library
+-f                 Specify file to research. Used with --research-mode file.
+-d                 Specify directory to research. Used with --research-mode library.
+--research         Specify research query. Used with --research-mode.
+
+[EXAMPLE USAGE]
+	library_genesis --download-mode -k human
+	library_genesis --download-mode -p 3 -k human
+	library_genesis --download-mode --limit-speed 1024 --retry-max no-limit --search-mode title -k human
+	library_genesis --download-mode -u
+	library_genesis --research-mode library -d ./library_genesis/ --research 1984
 
 
 Requirements:
