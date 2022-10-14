@@ -37,6 +37,7 @@ import socket
 import sol_ext
 import pyprogress
 import colorama
+import pdfplumber
 
 socket.setdefaulttimeout(15)
 colorama.init()
@@ -45,7 +46,7 @@ if not os.path.exists('./dl_id.txt'):
     open('./dl_id.txt', 'w').close()
 
 
-run_function = 0
+run_function = 1984
 max_retry = 3
 max_retry_i = 0
 total_books = int()
@@ -90,6 +91,155 @@ def get_dt():
     dt = datetime.datetime.now()
     dt = '[' + str(dt) + '] '
     return dt
+
+
+def search_f(file, query):
+
+    with pdfplumber.open(file) as pdf:
+        page_n = pdf.pages
+        pdf_page_max = int(str(page_n[-1]).replace('<Page:', '').replace('>', ''))
+        pdf_page_i = 0
+        for _ in page_n:
+            pdf_page_i += 1
+            page_cur = str(_).replace('<Page:', '')
+            page_cur = int(page_cur.replace('>', ''))
+            try:
+                page_ = pdf.pages[page_cur]
+                page_txt = page_.extract_text()
+                page_txt = str(page_txt).strip()
+                page_txt = page_txt.split('\n')
+
+                var = False
+                i = 0
+                for _ in page_txt:
+                    if noCase(query) in noCase(_):
+                        if not os.path.exists('./research_' + query + '.txt'):
+                            open('./research_' + query + '.txt', 'w', encoding='utf8').close()
+                        with open('./research_' + query + '.txt', 'a', encoding='utf8') as fo:
+                            fo.write('-------------------------------------------------' + '\n')
+                            fo.write('[FILE] ' + file + '\n')
+                            fo.write('[PAGE] ' + str(pdf_page_i) + '\n')
+                            fo.write('[QUERY] ' + query + '\n')
+                        fo.close()
+
+                        print('[SEARCHING FILE CONTENTS]', file)
+                        print('[QUERY]', query)
+                        print('[PAGE]', pdf_page_i, '/', pdf_page_max)
+                        print('...')
+                        print(_)
+                        if not os.path.exists('./research_' + query + '.txt'):
+                            open('./research_' + query + '.txt', 'w', encoding='utf8').close()
+                        with open('./research_' + query + '.txt', 'a', encoding='utf8') as fo:
+                            fo.write(_ + '\n')
+                        fo.close()
+                        var = True
+                    elif var is True:
+                        print(_)
+                        if not os.path.exists('./research_' + query + '.txt'):
+                            open('./research_' + query + '.txt', 'w', encoding='utf8').close()
+                        with open('./research_' + query + '.txt', 'a', encoding='utf8') as fo:
+                            fo.write(_ + '\n')
+                        fo.close()
+                        if '.' in _:
+                            print('...')
+                            var = False
+                            print('')
+                            print('-' * 200)
+                            print('')
+                    i += 1
+            except:
+                break
+    pdf.close()
+
+    if os.path.exists('./research_' + query + '.txt'):
+        with codecs.open('./research_' + query + '.txt', 'r', encoding='utf-8') as fo:
+            for line in fo:
+                line = line.strip()
+                print(line)
+        fo.close()
+
+
+def search_library(path, query):
+    pdf_max = 0
+    for dirName, subdirList, fileList in os.walk(path):
+        for fname in fileList:
+            if fname.endswith('.pdf'):
+                pdf_max += 1
+
+    pdf_i = 0
+    pdf_page_max = 0
+    for dirName, subdirList, fileList in os.walk(path):
+        for fname in fileList:
+            if fname.endswith('.pdf'):
+                pdf_i += 1
+                fullpath = os.path.join(dirName, fname)
+                try:
+                    with pdfplumber.open(fullpath) as pdf:
+                        page_n = pdf.pages
+                        pdf_page_max = int(str(page_n[-1]).replace('<Page:', '').replace('>', ''))
+                        pdf_page_i = 0
+                        for _ in page_n:
+                            pdf_page_i += 1
+                            page_cur = str(_).replace('<Page:', '')
+                            page_cur = int(page_cur.replace('>', ''))
+                            try:
+                                page_ = pdf.pages[page_cur]
+                                page_txt = page_.extract_text()
+                                page_txt = str(page_txt).strip()
+                                page_txt = page_txt.split('\n')
+
+                                var = False
+                                for _ in page_txt:
+                                    print('')
+                                    print('-' * 200)
+                                    print('')
+                                    print('[PROGRESS]', pdf_i, '/', pdf_max)
+                                    print('[SEARCHING FILE CONTENTS]', fullpath)
+                                    print('[PAGE]', pdf_page_i, '/', pdf_page_max)
+                                    print('[QUERY]', query)
+                                    if noCase(query) in noCase(_):
+                                        if not os.path.exists('./research_'+query+'.txt'):
+                                            open('./research_'+query+'.txt', 'w', encoding='utf8').close()
+                                        with open('./research_' + query + '.txt', 'a', encoding='utf8') as fo:
+                                            fo.write('-------------------------------------------------' + '\n')
+                                            fo.write('[FILE] '+fullpath + '\n')
+                                            fo.write('[PAGE] '+str(pdf_page_i) + '\n')
+                                            fo.write('[QUERY] '+query + '\n')
+                                        fo.close()
+                                        print('...')
+                                        print(_)
+                                        if not os.path.exists('./research_' + query + '.txt'):
+                                            open('./research_' + query + '.txt', 'w', encoding='utf8').close()
+                                        with open('./research_' + query + '.txt', 'a', encoding='utf8') as fo:
+                                            fo.write(_ + '\n')
+                                        fo.close()
+                                        var = True
+                                    elif var is True:
+                                        print(_)
+                                        if not os.path.exists('./research_' + query + '.txt'):
+                                            open('./research_' + query + '.txt', 'w', encoding='utf8').close()
+                                        with open('./research_' + query + '.txt', 'a', encoding='utf8') as fo:
+                                            fo.write(_ + '\n')
+                                        fo.close()
+                                        if '.' in _:
+                                            print('...')
+                                            var = False
+                                            print('')
+                                            print('-' * 200)
+                                            print('')
+                            except Exception as e:
+                                print(e)
+                                break
+                    pdf.close()
+                except Exception as e:
+                    print(e)
+
+    if os.path.exists('./research_' + query + '.txt'):
+        with open('./research_' + query + '.txt', 'r', encoding='utf8') as fo:
+            for line in fo:
+                line = line.strip()
+                print(line)
+        fo.close()
 
 
 def book_id_check(book_id, check_type):
@@ -218,12 +368,6 @@ def convert_bytes(num):
         num /= 1024.0
 
 
-def banner():
-    print('\n\n')
-    print('[LIBRARY GENESIS DOWNLOAD TOOL]')
-    print('')
-
-
 def enumerate_ids():
     """ Used to measure multiple instances/types of progress during download """
 
@@ -344,7 +488,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
         except Exception as e:
             e = str(e)
             clear_console_line(char_limit=char_limit)
-            pr_str = str(get_dt() + '[ERROR]')
+            pr_str = str(get_dt() + '[' + colorama.Style.BRIGHT + colorama.Fore.RED + 'ERROR' + colorama.Style.RESET_ALL + ']')
             pr_technical_data(pr_str)
             char_limit = int(len(pr_str))
 
@@ -358,7 +502,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
         total_dl_success += 1
         pr_technical_data('')
         print('\n')
-        print(str(get_dt() + colorama.Style.BRIGHT + colorama.Fore.GREEN + '[DOWNLOADED SUCCESSFULLY]' + colorama.Style.RESET_ALL))
+        print(str(get_dt() + '[' + colorama.Style.BRIGHT + colorama.Fore.GREEN + 'DOWNLOADED SUCCESSFULLY' + colorama.Style.RESET_ALL + ']'))
 
         rem_dl_id(book_id=book_id)
 
@@ -367,7 +511,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
     else:
         clear_console_line(char_limit=char_limit)
-        pr_str = str(get_dt() + '[DOWNLOADED FAILED]')
+        pr_str = str(get_dt() + '[' + colorama.Style.BRIGHT + colorama.Fore.RED + 'DOWNLOADED FAILED' + colorama.Style.RESET_ALL + ']')
         pr_technical_data(pr_str)
         char_limit = int(len(pr_str))
 
@@ -492,18 +636,24 @@ def enumerate_book(search_q, f_dir, lookup_ids):
 
                     # dl book cover
                     if not os.path.exists(save_path_img):
-                        # print(get_dt() + '[SAVING] [COVER] ' + str(save_path_img))  # uncomment to display path
-                        print(get_dt() + '[SAVING] [COVER]')
-                        http = urllib3.PoolManager(retries=retries)
-                        r = http.request('GET', img_, preload_content=False, headers=headers)
-                        with open(save_path_img, 'wb') as fo:
-                            while True:
-                                data = r.read(1000)
-                                if not data:
-                                    break
-                                fo.write(data)
-                        fo.close()
-                        r.release_conn()
+                        try:
+                            # print(get_dt() + '[SAVING] [COVER] ' + str(save_path_img))  # uncomment to display path
+                            print(get_dt() + '[SAVING] [COVER]')
+                            http = urllib3.PoolManager(retries=retries)
+                            r = http.request('GET', img_, preload_content=False, headers=headers)
+                            with open(save_path_img, 'wb') as fo:
+                                while True:
+                                    data = r.read(1000)
+                                    if not data:
+                                        break
+                                    fo.write(data)
+                            fo.close()
+                        except Exception as e:
+                            print(get_dt() + '[SAVING] [COVER] failed')
+                        try:
+                            r.release_conn()
+                        except:
+                            pass
 
                     # dl book
                     allow_dl = False
@@ -566,108 +716,207 @@ def summary():
 
 # Help menu
 if len(sys.argv) == 2 and sys.argv[1] == '-h':
-    banner()
+    print('')
+    print('-'*104)
+    print('')
+    print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ LIBRARY GENESIS DOWNLOAD & RESEARCH TOOL ]' + colorama.Style.RESET_ALL)
+    print('')
+    print('-' * 104)
+    print('')
     print('    Intended as an intelligence tool for archiving information in an uncertain world.')
     print('    Downloads every book on every page for keyword specified.')
+    print('    Also provides function to compile and save a list of reading material relative to search terms(s)')
+    print('    to aid and assist in research when dealing with large libraries.')
     print('    Written by Benjamin Jack Cullen.')
     print('')
-    print('Command line arguments:\n')
-    print('    -h             Displays this help message.\n')
-    print('    -k             Keyword. Specify keyword(s). Should always be the last argument. Anything after -k will')
-    print('                   be treated as a keyword(s).\n')
-    print('    -u             Update. Update an existing library genesis directory. Takes no further arguments.')
-    print('                   Each directory name in an existing ./library_genesis directory will')
-    print('                   be used as a keyword during update process.\n')
-    print('    -p             Page. Specify start page number.\n')
-    print('    --retry-max    Max number of retries for an incomplete download.')
-    print('                   Can be set to no-limit to keep trying if an exception is encountered.')
-    print('                   Default is 3. If --retry-max unspecified then default value will be used.')
-    print('                   Using no-limit is always recommended. If issues are encountered then specify number.\n')
-    print('    --search-mode  Specify search mode.')
-    print('                   --search-mode title')
-    print('                   --search-mode author')
-    print('                   --search-mode isbn')
-    print('                   Default is title. If --search-mode unspecified then default value will be used.\n')
-    print('    --limit-speed  Throttle download speed. Specify bytes per second in digits.')
-    print('                   1024 bytes = 100KB. Use a calculator if you need it.')
-    print('                   Example: --limit-speed 1024')
-    print('                   Default is 0 (unlimited). If --limit-speed is unspecified then default value will be used.')
+    print('-' * 104)
     print('')
-    print('    Example: library_genesis -k human')
-    print('    Example: library_genesis -p 3 -k human')
-    print('    Example: library_genesis --limit-speed 1024 --retry-max no-limit --search-mode title -k human')
-    print('    Example: library_genesis -u')
+    print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ Download Arguments ]' + colorama.Style.RESET_ALL)
     print('')
+    print('    -h                 Displays this help message.\n')
+    print('    -k                 Keyword. Specify keyword(s). Should always be the last argument.')
+    print('                       Anything after -k will be treated as a keyword(s).\n')
+    print('    -p                 Page. Specify start page number. Default is 0.\n')
+    print('    -u                 Update. Update an existing library genesis directory.')
+    print('                       Each directory name in an existing ./library_genesis directory will')
+    print('                       be used as a search term during update process.\n')
+    print('    --download-mode    Instructs program to run in download mode.\n')
+    print('    --retry-max        Max number of retries for an incomplete download.')
+    print('                       Can be set to no-limit to keep trying if an exception is encountered.')
+    print('                       Default is 3. Using no-limit is always recommended. ')
+    print('                       If issues are encountered then specify number.\n')
+    print('    --search-mode      Specify search mode. Default is title')
+    print('                       --search-mode title')
+    print('                       --search-mode author')
+    print('                       --search-mode isbn\n')
+    print('    --limit-speed      Throttle download speed. Specify bytes per second in digits.')
+    print('                       1024 bytes = 100KB. Use a calculator if you need it.')
+    print('                       Example: --limit-speed 1024')
+    print('                       Default is 0 (unlimited).')
+    print('')
+    print('-' * 104)
+    print('')
+    print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ Research Arguments ]' + colorama.Style.RESET_ALL)
+    print('')
+    print('    --research-mode    Specify research mode. Specify file/directory to research.')
+    print('                       --research-mode file')
+    print('                       --research-mode library\n')
+    print('    -f                 Specify file to research. Used with --research-mode file.\n')
+    print('    -d                 Specify directory to research. Used with --research-mode library.\n')
+    print('    --research         Specify research query. Used with --research-mode.')
+    print('')
+    print('-' * 104)
+    print('')
+    print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ EXAMPLE USAGE ]' + colorama.Style.RESET_ALL)
+    print('')
+    print('    library_genesis --download-mode -k human')
+    print('    library_genesis --download-mode -p 3 -k human')
+    print('    library_genesis --download-mode --limit-speed 1024 --retry-max no-limit --search-mode title -k human')
+    print('    library_genesis --download-mode -u')
+    print('    library_genesis --research-mode library -d ./library_genesis/ --research 1984')
+    print('')
+    print('-' * 104)
     run_function = 1984
 
 # Parse arguments
-run_function = ()
-i = 0
 retry_max_ = ''
 search_mode_ = ''
 i_page_ = ''
-for _ in sys.argv:
+print('')
+if '--download-mode' in sys.argv:
+    print('[MODE] Download')
+    i = 0
+    run_function = 0
+    for _ in sys.argv:
 
-    # keyword
-    if _ == '-k':
-        banner()
-        str_ = ''
-        i_2 = 0
-        for _ in sys.argv:
-            if i_2 >= i+1:
-                str_ = str_ + ' ' + str(_)
-            i_2 += 1
-        print(get_dt() + '[Search] ' + str(str_))
-        search_q = str_
-        run_function = 0
-        break
+        # keyword
+        if _ == '-k':
+            str_ = ''
+            i_2 = 0
+            for _ in sys.argv:
+                if i_2 >= i+1:
+                    str_ = str_ + ' ' + str(_)
+                i_2 += 1
+            if str_ != '':
+                search_q = str_
+            else:
+                print(get_dt() + "[failed] user failed to specify a search query.")
+                run_function = 1984
+                break
 
-    elif _ == '-p':
-        i_page_ = str(sys.argv[i+1])
-        if i_page_.isdigit():
-            i_page = int(sys.argv[i+1])
-            run_function = 0
-        else:
-            run_function = 4
+        # page
+        elif _ == '-p':
+            i_page_ = str(sys.argv[i+1])
+            if i_page_.isdigit():
+                i_page = int(sys.argv[i+1])
+            else:
+                print(get_dt() + '[failed] -p cannot be ' + i_page_)
+                run_function = 1984
+                break
 
-    elif _ == '--retry-max':
-        retry_max_ = sys.argv[i + 1]
-        if str(sys.argv[i+1]).isdigit():
-            max_retry = int(sys.argv[i+1])
-        elif str(sys.argv[i+1]) == 'no-limit':
-            max_retry = str(sys.argv[i+1])
-            run_function = 0
-        else:
-            run_function = 2
+        # retry limiter
+        elif _ == '--retry-max':
+            retry_max_ = sys.argv[i + 1]
+            if str(sys.argv[i+1]).isdigit():
+                max_retry = int(sys.argv[i+1])
+            elif str(sys.argv[i+1]) == 'no-limit':
+                max_retry = str(sys.argv[i+1])
+            else:
+                print(get_dt() + '[failed] --retry-max cannot be ' + retry_max_)
+                run_function = 1984
+                break
 
-    elif _ == '--search-mode':
-        search_mode_ = sys.argv[i+1]
-        if sys.argv[i+1] == 'title':
-            search_mode = sys.argv[i+1]
-        elif sys.argv[i+1] == 'author':
-            search_mode = sys.argv[i+1]
-        elif sys.argv[i+1] == 'isbn':
-            search_mode = sys.argv[i+1]
-            run_function = 0
-        else:
-            run_function = 3
+        # search mode
+        elif _ == '--search-mode':
+            search_mode_ = sys.argv[i+1]
+            if sys.argv[i+1] == 'title':
+                search_mode = sys.argv[i+1]
+            elif sys.argv[i+1] == 'author':
+                search_mode = sys.argv[i+1]
+            elif sys.argv[i+1] == 'isbn':
+                search_mode = sys.argv[i+1]
+            else:
+                print(get_dt() + '[failed] --search-mode cannot be ' + search_mode_)
+                run_function = 1984
+                break
 
-    elif _ == '--limit-speed':
-        if sys.argv[i+1].isdigit():
-            limit_speed = int(sys.argv[i+1])
-            human_limit_speed = str(convert_bytes(int(limit_speed)))
+        # throttle download speed
+        elif _ == '--limit-speed':
+            if sys.argv[i+1].isdigit():
+                limit_speed = int(sys.argv[i+1])
+                human_limit_speed = str(convert_bytes(int(limit_speed)))
+            else:
+                print(get_dt() + "[failed] --limit-speed accepts digits argument.")
+                run_function = 1984
+                break
 
+        i += 1
+
+elif '-u' in sys.argv and '--download-mode' in sys.argv:
+    print('[MODE] Update')
     # update
-    elif _ == '-u':
-        if len(sys.argv) == 2:
-            run_function = 1
-        else:
-            run_function = 5
-        break
-    i += 1
+    if len(sys.argv) == 3:
+        run_function = 1
+    else:
+        print(get_dt() + '[failed] update switch takes no other arguments.')
+        run_function = 1984
 
-# Keyword download
+elif '--research-mode' in sys.argv:
+    print('[MODE] Research')
+    run_function = 2
+    for _ in sys.argv:
+
+        # research mode
+        if _ == '--research-mode':
+            r_mode_idx = sys.argv.index('--research-mode')
+            r_mode = sys.argv[r_mode_idx+1]
+
+            if r_mode != 'file' and r_mode != 'library':
+                print(get_dt() + "[failed] --research-mode accepts either 'file' or 'library' as a valid argument.")
+                run_function = 1984
+                break
+
+        # file
+        elif _ == '-f':
+            file_idx = sys.argv.index('-f')
+            file = sys.argv[file_idx + 1]
+            if os.path.exists(file):
+                file_ = sys.argv[file_idx + 1]
+            else:
+                print(get_dt() + "[failed] file specified appears not to exist.")
+                run_function = 1984
+                break
+
+        # directory
+        elif _ == '-d':
+            dir_idx = sys.argv.index('-d')
+            dir = sys.argv[dir_idx + 1]
+            if os.path.exists(dir):
+                dir_ = sys.argv[dir_idx + 1]
+            else:
+                print(get_dt() + "[failed] directory specified appears not to exist.")
+                run_function = 1984
+                break
+
+        # research string
+        elif _ == '--research':
+            research_str_idx = sys.argv.index('--research')
+            research_str_ = ''
+            i_2 = 0
+            for _ in sys.argv:
+                if i_2 >= research_str_idx+1:
+                    research_str = research_str_ + ' ' + str(_)
+                i_2 += 1
+            if not research_str == '':
+                research_str_ = research_str
+            else:
+                print(get_dt() + "[failed] please specify research string.")
+                run_function = 1984
+                break
+
+# download by keyword
 if run_function == 0:
+    clear_console()
     book_id_check(book_id='', check_type='read-file')
     search_q = search_q.strip()
     enumerate_ids()
@@ -678,9 +927,10 @@ if run_function == 0:
             i_page += 1
     summary()
 
+# download in update mode
 elif run_function == 1:
+    clear_console()
     book_id_check(book_id='', check_type='read-file')
-    banner()
     print(get_dt() + '[Update Library]')
     update_max = 0
     search_q = []
@@ -699,14 +949,22 @@ elif run_function == 1:
         i_query += 1
     summary()
 
+# research
 elif run_function == 2:
-    print(get_dt() + '[failed] --retry-max cannot be ' + retry_max_)
-elif run_function == 3:
-    print(get_dt() + '[failed] --search-mode cannot be ' + search_mode_)
-elif run_function == 4:
-    print(get_dt() + '[failed] -p cannot be ' + i_page_)
-elif run_function == 5:
-    print(get_dt() + '[failed] update switch takes no other arguments.')
+    print('[research mode]')
+    if r_mode == 'file':
+        print('[research mode] file')
+        search_f(file=file_, query=research_str_.strip())
+    elif r_mode == 'library':
+        print('[research mode] library')
+        search_library(path=dir_, query=research_str_.strip())
+    else:
+        print('-- research mode unspecified')
 
+else:
+    if run_function != 1984:
+        print('\nUse -h for help.')
+
+# final
 print('\n')
 colorama.Style.RESET_ALL
