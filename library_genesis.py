@@ -750,7 +750,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('                       --search-mode author')
     print('                       --search-mode isbn\n')
     print('    --limit-speed      Throttle download speed. Specify bytes per second in digits.')
-    print('                       1024 bytes = 100KB. Use a calculator if you need it.')
+    print('                       1024 bytes = 1KB. Use a calculator if you need it.')
     print('                       Example: --limit-speed 1024')
     print('                       Default is 0 (unlimited).')
     print('')
