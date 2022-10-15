@@ -454,7 +454,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
             while True:
 
                 if limit_speed == 0:
-                    data = r.read(10000)
+                    data = r.read(1024)
                     pre_append = '[DOWNLOADING BOOK] '
                 else:
                     data = r.read(limit_speed)
