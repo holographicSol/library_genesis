@@ -32,7 +32,7 @@ Command line arguments:
                Default is title. If --search-mode unspecified then default value will be used.
 
 --limit-speed  Throttle download speed. Specify bytes per second in digits.
-               1024 bytes = 100KB. Use a calculator if you need it.
+               1024 bytes = 1KB. Use a calculator if you need it.
                Example: --limit-speed 1024
                Default is 0 (unlimited). If --limit-speed is unspecified then default value will be used.
 
