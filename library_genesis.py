@@ -22,7 +22,7 @@ Written by Benjamin Jack Cullen aka Holographic_Sol
         - recommended to keep book_id.txt unless it grows to large.
 
 """
-import datetime
+from datetime import datetime
 import os
 import sys
 import time
@@ -32,14 +32,14 @@ import requests
 from bs4 import BeautifulSoup
 import urllib3
 import unicodedata
-import subprocess
-import socket
 import sol_ext
 import pyprogress
 import colorama
 import pdfplumber
+import socket
 
 socket.setdefaulttimeout(15)
+
 colorama.init()
 
 if not os.path.exists('./dl_id.txt'):
@@ -71,11 +71,7 @@ search_mode = 'title'
 
 start_page = False
 
-info = subprocess.STARTUPINFO()
-info.dwFlags = 1
-info.wShowWindow = 0
-
-retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 3
+retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 10
 multiplier = pyprogress.multiplier_from_inverse_factor(factor=50)
 
 headers = {
@@ -88,7 +84,7 @@ headers = {
 
 def get_dt():
     """ create a datetime string """
-    dt = datetime.datetime.now()
+    dt = datetime.now()
     dt = '[' + str(dt) + '] '
     return dt
 
@@ -481,12 +477,15 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                                             multiplier=multiplier)
                 except Exception as e:
                     print(e)
+                    time.sleep(3)
 
                 if limit_speed != 0:
                     time.sleep(1)
 
         except Exception as e:
             e = str(e)
+            print(e)
+            time.sleep(3)
             clear_console_line(char_limit=char_limit)
             pr_str = str(get_dt() + '[' + colorama.Style.BRIGHT + colorama.Fore.RED + 'ERROR' + colorama.Style.RESET_ALL + ']')
             pr_technical_data(pr_str)
@@ -526,7 +525,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                 pr_technical_data(pr_str)
                 char_limit = int(len(pr_str))
 
-                time.sleep(5)
+                time.sleep(3)
                 dl(href, save_path, str_filesize, filesize, title, author, year, book_id)
 
         elif str(max_retry) == 'no-limit':
@@ -536,7 +535,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
             pr_technical_data(pr_str)
             char_limit = int(len(pr_str))
 
-            time.sleep(5)
+            time.sleep(3)
             dl(href, save_path, str_filesize, filesize, title, author, year, book_id)
 
 
@@ -643,7 +642,7 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                             r = http.request('GET', img_, preload_content=False, headers=headers)
                             with open(save_path_img, 'wb') as fo:
                                 while True:
-                                    data = r.read(1000)
+                                    data = r.read(1024)
                                     if not data:
                                         break
                                     fo.write(data)
