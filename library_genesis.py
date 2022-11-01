@@ -383,7 +383,8 @@ def enumerate_ids():
             for _ in ids:
                 if _ not in ids_:
                     ids_n.append(_)
-        except:
+        except Exception as e:
+            print(e)
             add_page = False
         if not ids:
             add_page = False
@@ -782,7 +783,7 @@ retry_max_ = ''
 search_mode_ = ''
 i_page_ = ''
 print('')
-if '--download-mode' in sys.argv:
+if '--download-mode' in sys.argv and not '-u' in sys.argv:
     print('[MODE] Download')
     i = 0
     run_function = 0
