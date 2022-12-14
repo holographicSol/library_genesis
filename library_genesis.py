@@ -21,6 +21,8 @@ Written by Benjamin Jack Cullen aka Holographic_Sol
         will be skipped or downloaded.
         - recommended to keep book_id.txt unless it grows to large.
 
+todo --> ensure filename to save will be a reasonable length
+
 """
 from datetime import datetime
 import os
@@ -37,6 +39,12 @@ import pyprogress
 import colorama
 import pdfplumber
 import socket
+import subprocess
+
+info = subprocess.STARTUPINFO()
+info.dwFlags = 1
+info.wShowWindow = 0
+main_pid = int()
 
 socket.setdefaulttimeout(15)
 
@@ -58,6 +66,13 @@ total_i = 0
 limit_speed = 0
 human_limit_speed = ''
 
+pdf_max = 0
+pdf_list = []
+threads = 4
+i_match = 0
+query = ''
+verbosity = False
+
 book_id_store = []
 no_ext = []
 no_md5 = []
@@ -73,6 +88,11 @@ start_page = False
 
 retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 10
 multiplier = pyprogress.multiplier_from_inverse_factor(factor=50)
+
+if not os.path.exists('./tmp'):
+    os.mkdir('./tmp')
+if not os.path.exists('./research'):
+    os.mkdir('./research')
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
@@ -155,87 +175,214 @@ def search_f(file, query):
         fo.close()
 
 
-def search_library(path, query):
-    pdf_max = 0
+def check_clear():
+    global query
+    for dirName, subdirList, fileList in os.walk('./tmp'):
+        for fname in fileList:
+            fullpath = os.path.join(dirName, fname)
+            if fname.endswith('.txt'):
+                f_exists = False
+                if fname.startswith('research_completed_'+query):
+                    f_exists = True
+                elif fname.startswith('research_'+query):
+                    f_exists = True
+                elif fname.startswith('research_match_'+query):
+                    f_exists = True
+                if f_exists is True:
+                    while os.path.exists(fullpath):
+                        try:
+                            os.remove(fullpath)
+                        except Exception as e:
+                            pass
+
+
+def files_enumerate():
+    global pdf_max
+    global pdf_list
+
     for dirName, subdirList, fileList in os.walk(path):
         for fname in fileList:
             if fname.endswith('.pdf'):
                 pdf_max += 1
+                pdf_list.append(os.path.join(dirName, fname))
+                print('[ENUMERATING] ' + str(pdf_max), end='\r', flush=True)
+    print('')
 
-    pdf_i = 0
-    pdf_page_max = 0
-    for dirName, subdirList, fileList in os.walk(path):
-        for fname in fileList:
-            if fname.endswith('.pdf'):
-                pdf_i += 1
-                fullpath = os.path.join(dirName, fname)
-                try:
-                    with pdfplumber.open(fullpath) as pdf:
-                        page_n = pdf.pages
-                        pdf_page_max = int(str(page_n[-1]).replace('<Page:', '').replace('>', ''))
-                        pdf_page_i = 0
-                        for _ in page_n:
-                            pdf_page_i += 1
-                            page_cur = str(_).replace('<Page:', '')
-                            page_cur = int(page_cur.replace('>', ''))
-                            try:
-                                page_ = pdf.pages[page_cur]
-                                page_txt = page_.extract_text()
-                                page_txt = str(page_txt).strip()
-                                page_txt = page_txt.split('\n')
 
-                                var = False
-                                for _ in page_txt:
-                                    print('')
-                                    print('-' * 200)
-                                    print('')
-                                    print('[PROGRESS]', pdf_i, '/', pdf_max)
-                                    print('[SEARCHING FILE CONTENTS]', fullpath)
-                                    print('[PAGE]', pdf_page_i, '/', pdf_page_max)
-                                    print('[QUERY]', query)
-                                    if noCase(query) in noCase(_):
-                                        if not os.path.exists('./research_'+query+'.txt'):
-                                            open('./research_'+query+'.txt', 'w', encoding='utf8').close()
-                                        with open('./research_' + query + '.txt', 'a', encoding='utf8') as fo:
-                                            fo.write('-------------------------------------------------' + '\n')
-                                            fo.write('[FILE] '+fullpath + '\n')
-                                            fo.write('[PAGE] '+str(pdf_page_i) + '\n')
-                                            fo.write('[QUERY] '+query + '\n')
-                                        fo.close()
-                                        print('...')
-                                        print(_)
-                                        if not os.path.exists('./research_' + query + '.txt'):
-                                            open('./research_' + query + '.txt', 'w', encoding='utf8').close()
-                                        with open('./research_' + query + '.txt', 'a', encoding='utf8') as fo:
-                                            fo.write(_ + '\n')
-                                        fo.close()
-                                        var = True
-                                    elif var is True:
-                                        print(_)
-                                        if not os.path.exists('./research_' + query + '.txt'):
-                                            open('./research_' + query + '.txt', 'w', encoding='utf8').close()
-                                        with open('./research_' + query + '.txt', 'a', encoding='utf8') as fo:
-                                            fo.write(_ + '\n')
-                                        fo.close()
-                                        if '.' in _:
-                                            print('...')
-                                            var = False
-                                            print('')
-                                            print('-' * 200)
-                                            print('')
-                            except Exception as e:
-                                print(e)
-                                break
-                    pdf.close()
-                except Exception as e:
-                    print(e)
+def get_pages():
+    global i_match, threads, verbosity
 
-    if os.path.exists('./research_' + query + '.txt'):
-        with open('./research_' + query + '.txt', 'r', encoding='utf8') as fo:
-            for line in fo:
-                line = line.strip()
-                print(line)
-        fo.close()
+    i_book = 0
+    i_match = 0
+    for _ in pdf_list:
+
+        i_book += 1
+        print('-' * 150)
+        print('[RESEARCHING] ' + str(query))
+        print('[PROGRESS] ' + str(i_book) + ' / ' + str(len(pdf_list)))
+        print('[CURRENT BOOK] ' + str(_))
+
+        try:
+            with pdfplumber.open(_) as pdf:
+                page_n = pdf.pages
+                pdf_page_max = int(str(page_n[-1]).replace('<Page:', '').replace('>', ''))
+            page_max_divide = round(pdf_page_max / threads)
+            page_group_start = []
+            page_group_end = []
+            i_page_group_end = page_max_divide
+            i = 1
+            while i_page_group_end < pdf_page_max:
+                page_group_start.append(((i-1) * page_max_divide)+1)
+                i_page_group_end = (i * page_max_divide)
+                if i_page_group_end < pdf_page_max:
+                    page_group_end.append(i_page_group_end)
+                else:
+                    i_page_group_end = pdf_page_max
+                    page_group_end.append(i_page_group_end)
+                i += 1
+            if len(page_group_end) > threads:
+                page_group_end[-2] = page_group_end[-1]
+                del page_group_end[-1]
+                del page_group_start[-1]
+            i = 0
+            i_xcmd = []
+            for page_group_starts in page_group_start:
+                cmd = '"./research.exe" ' + str(i) + ' "' + str(_) + '" ' + str(page_group_start[i]) + ' ' + str(page_group_end[i]) + ' ' + str(verbosity) + ' "' + query + '"'
+                xcmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, startupinfo=info)
+                i_xcmd.append(xcmd)
+                time.sleep(0.4)
+                i += 1
+            completed = False
+            i_completed = 0
+            i_page_count = []
+            for _ in page_group_start:
+                i_page_count.append(0)
+            while completed is False:
+                i = 0
+                for _ in page_group_start:
+                    if os.path.exists('./tmp/research_completed_' + query + '_' + str(i) + '.txt'):
+                        i_completed += 1
+                    if os.path.exists('./tmp/research_' + query + '_' + str(i) + '_ipage_.txt'):
+                        with open('./tmp/research_' + query + '_' + str(i) + '_ipage_.txt', 'r') as fo:
+                            for line in fo:
+                                line = line.strip()
+                                i_page_count[i] = int(line)
+                        fo.close()
+                    page_count = 0
+                    for _ in i_page_count:
+                        page_count += _
+                    if int(page_count) <= pdf_page_max:
+                        pyprogress.progress_bar(part=int(page_count), whole=int(pdf_page_max),
+                                                pre_append='[SCANNING] ',
+                                                append=str(' ' + str(page_count) + '/' + str(pdf_page_max)),
+                                                encapsulate_l='|',
+                                                encapsulate_r='|',
+                                                encapsulate_l_color='LIGHTCYAN_EX',
+                                                encapsulate_r_color='LIGHTCYAN_EX',
+                                                progress_char=' ',
+                                                bg_color='GREEN',
+                                                factor=50,
+                                                multiplier=multiplier)
+                    if i_completed >= len(page_group_start)-1:
+                        pyprogress.progress_bar(part=int(pdf_page_max), whole=int(pdf_page_max),
+                                                pre_append='[SCANNING] ',
+                                                append=str(' ' + str(pdf_page_max) + ' / ' + str(pdf_page_max)),
+                                                encapsulate_l='|',
+                                                encapsulate_r='|',
+                                                encapsulate_l_color='LIGHTCYAN_EX',
+                                                encapsulate_r_color='LIGHTCYAN_EX',
+                                                progress_char=' ',
+                                                bg_color='GREEN',
+                                                factor=50,
+                                                multiplier=multiplier)
+                        print('')
+                        # for i_xcmds in i_xcmd:
+                        #     i_xcmds.poll()
+                        completed = True
+                        break
+                    time.sleep(0.05)
+                    i += 1
+
+            tmp_i_match = 0
+            i = 0
+            while i < threads:
+                if os.path.exists('./tmp/research_match_' + query + '_' + str(i) + '.txt'):
+                    with open('./tmp/research_match_' + query + '_' + str(i) + '.txt', 'r') as fo:
+                        for line in fo:
+                            line = line.strip()
+                            if line.isdigit():
+                                tmp_i_match += int(line)
+                i += 1
+            i_match = tmp_i_match
+
+            if i_match == 0:
+                print('[MATCHES] ' + colorama.Style.BRIGHT + colorama.Fore.YELLOW + str(i_match) + colorama.Style.RESET_ALL)
+            elif i_match > 0:
+                print('[MATCHES] ' + colorama.Style.BRIGHT + colorama.Fore.GREEN + str(i_match) + colorama.Style.RESET_ALL)
+
+            i = 0
+            for _ in page_group_start:
+                if os.path.exists('./tmp/research_' + query + '_' + str(i) + '.txt'):
+                    with codecs.open('./tmp/research_' + query + '_' + str(i) + '.txt', 'r', encoding='utf8') as fo:
+                        with codecs.open('./research/research_' + query + '.txt', 'a', encoding='utf8') as fo2:
+                            for line in fo:
+                                line = line.strip()
+                                fo2.write(line + '\n')
+                    with open('./tmp/research_' + query + '_' + str(i) + '.txt', 'w') as fo:
+                        fo.close()
+                i += 1
+        except Exception as e:
+            print('[EXCEPTION] ' + str(e))
+
+
+def search_library():
+
+    t1 = datetime.now()
+    t1b = time.time()
+    check_clear()
+    files_enumerate()
+    get_pages()
+    t2 = datetime.now()
+    t2b = time.time()
+    print('-'*150)
+    print('')
+    print('[INITIATION TIME]', t1)
+    print('[TIME COMPLETED]', t2)
+    print('[TOTAL TIME]', t2b - t1b)
+    print('')
+    print('-' * 150)
+    print('['+colorama.Style.BRIGHT + colorama.Fore.GREEN + 'COMPLETED' + colorama.Style.RESET_ALL + ']')
+    print('-'*150)
+    print('')
+    if i_match > 0:
+        print('[OPTIONS]')
+        print('\n[1] Display Results')
+        print('[2] Open Results File')
+        print('')
+        opt_input = input('select: ')
+        if opt_input == '1':
+            print('')
+            print('-'*150)
+            print('[RESEARCH RESULTS]')
+            print('')
+            if os.path.exists('./research_' + query + '.txt'):
+                with open('./research_' + query + '.txt', 'r', encoding='utf8') as fo:
+                    for line in fo:
+                        line = line.strip()
+                        print(line)
+                fo.close()
+        elif opt_input == '2':
+            print('')
+            print('-' * 150)
+            print('[OPENING RESEARCH RESULTS FILE]')
+            f = os.getcwd() + '\\research\\research_' + query + '.txt'
+            os.startfile('"' + f + '"')
+
+        else:
+            print('')
+            print('-' * 150)
+            print('invalid option!')
+            print('research results file available at location:', os.getcwd() + '\\research\\research_' + query + '.txt')
 
 
 def book_id_check(book_id, check_type):
@@ -329,7 +476,7 @@ def clear_console():
     """ clears console """
 
     command = 'clear'
-    if os.name in ('nt', 'dos'):  # If Machine is running on Windows, use cls
+    if os.name in ('nt', 'dos'):
         command = 'cls'
     os.system(command)
 
@@ -403,19 +550,20 @@ def compile_ids(search_q, i_page):
     """ compile a fresh set of book ids per page (prevents overloading request) """
 
     global ids_
+
     print('-' * 100)
     print(get_dt() + '[COMPILE IDS]')
     ids_ = []
     f_dir = './library_genesis/' + search_q + '/'
 
-    library_ = Library()
     try:
+        library_ = Library()
         ids = library_.search(query=search_q, mode=search_mode, page=i_page, per_page=100)
         ids_ = ids
 
     except Exception as e:
         print(get_dt() + str(e))
-        time.sleep(5)
+        time.sleep(1)
         compile_ids(search_q, i_page)
 
     lookup_ids = library_.lookup(ids_)
@@ -634,6 +782,11 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                     save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')_' + book_id + ext
                     save_path_img = save_path + '.jpg'
 
+                    if len(save_path) >= 255:
+                        save_path = save_path[:259+len(ext)]
+                        save_path = save_path + '...)' + ext
+                        print(get_dt() + '[LIMITING FILENAME LENGTH]' + str(save_path))
+
                     # dl book cover
                     if not os.path.exists(save_path_img):
                         try:
@@ -762,6 +915,9 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('                       --research-mode file')
     print('                       --research-mode library\n')
     print('    -f                 Specify file to research. Used with --research-mode file.\n')
+    print('    -t                 Specify thread count. Used with --research-mode library.')
+    print('                       Default thread count is 4. Any thread count over 1 will divide pdf pages of each pdf across n threads specified.')
+    print('                       This can greatly improve performance\n')
     print('    -d                 Specify directory to research. Used with --research-mode library.\n')
     print('    --research         Specify research query. Used with --research-mode.')
     print('')
@@ -773,7 +929,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('    library_genesis --download-mode -p 3 -k human')
     print('    library_genesis --download-mode --limit-speed 1024 --retry-max no-limit --search-mode title -k human')
     print('    library_genesis --download-mode -u')
-    print('    library_genesis --research-mode library -d ./library_genesis/ --research 1984')
+    print('    library_genesis --research-mode library -t 8 -d ./library_genesis/ --research 1984')
     print('')
     print('-' * 104)
     run_function = 1984
@@ -781,9 +937,11 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
 # Parse arguments
 retry_max_ = ''
 search_mode_ = ''
+research_str = ''
 i_page_ = ''
 print('')
 if '--download-mode' in sys.argv and not '-u' in sys.argv:
+    print('[LIBRARY GENESIS EXE]')
     print('[MODE] Download')
     i = 0
     run_function = 0
@@ -853,6 +1011,7 @@ if '--download-mode' in sys.argv and not '-u' in sys.argv:
         i += 1
 
 elif '-u' in sys.argv and '--download-mode' in sys.argv:
+    print('[LIBRARY GENESIS EXE]')
     print('[MODE] Update')
     # update
     if len(sys.argv) == 3:
@@ -862,6 +1021,7 @@ elif '-u' in sys.argv and '--download-mode' in sys.argv:
         run_function = 1984
 
 elif '--research-mode' in sys.argv:
+    print('[LIBRARY GENESIS EXE]')
     print('[MODE] Research')
     run_function = 2
     for _ in sys.argv:
@@ -873,6 +1033,17 @@ elif '--research-mode' in sys.argv:
 
             if r_mode != 'file' and r_mode != 'library':
                 print(get_dt() + "[failed] --research-mode accepts either 'file' or 'library' as a valid argument.")
+                run_function = 1984
+                break
+
+        # thread
+        elif _ == '-t':
+            thread_idx = sys.argv.index('-t')
+            _thread = sys.argv[thread_idx + 1]
+            if _thread.isdigit():
+                threads = int(_thread)
+            else:
+                print(get_dt() + "[failed] -t takes digit argument")
                 run_function = 1984
                 break
 
@@ -901,18 +1072,11 @@ elif '--research-mode' in sys.argv:
         # research string
         elif _ == '--research':
             research_str_idx = sys.argv.index('--research')
-            research_str_ = ''
             i_2 = 0
             for _ in sys.argv:
                 if i_2 >= research_str_idx+1:
-                    research_str = research_str_ + ' ' + str(_)
+                    research_str = research_str + ' ' + str(_)
                 i_2 += 1
-            if not research_str == '':
-                research_str_ = research_str
-            else:
-                print(get_dt() + "[failed] please specify research string.")
-                run_function = 1984
-                break
 
 # download by keyword
 if run_function == 0:
@@ -951,13 +1115,14 @@ elif run_function == 1:
 
 # research
 elif run_function == 2:
-    print('[research mode]')
     if r_mode == 'file':
-        print('[research mode] file')
-        search_f(file=file_, query=research_str_.strip())
+        print('[RESEARCH MODE] File')
+        search_f(file=file_, query=research_str.strip())
     elif r_mode == 'library':
-        print('[research mode] library')
-        search_library(path=dir_, query=research_str_.strip())
+        print('[RESEARCH MODE] Library')
+        path = dir_
+        query = research_str.strip()
+        search_library()
     else:
         print('-- research mode unspecified')
 

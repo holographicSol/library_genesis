@@ -44,6 +44,8 @@ bg_color_ = {'BLACK': colorama.Back.BLACK,
 
 
 def check_factor(factor):
+    """ check if specified factor is a factor of 100 """
+
     allow_bool = False
     if factor in factor_100:
         allow_bool = True
@@ -51,9 +53,13 @@ def check_factor(factor):
 
 
 def multiplier_from_inverse_factor(factor):
-    i = 0
+    """ create a multiplier from factor's inverse factor in the list of factors """
+
+    """ invert list of factors """
     inverse_factor_100 = factor_100[::-1]
 
+    """ iterate and match an apposing factor in the list to factor specified """
+    i = 0
     for _ in factor_100:
         if _ == factor:
             multiplier = inverse_factor_100[i]
@@ -84,7 +90,8 @@ def progress_bar(part, whole, percent=True, color='', bg_color='', encapsulate_l
     pre_append=str, append=str,
     encapsulate_l=str, encapsulate_r=str,
     progress_char=str,
-    factor=int (factor of 100:  1, 2, 4, 5, 10, 20, 25, 50, and 100)
+    factor=int,
+    multiplier=int
 
     Note: extremely customizable. The only required values are part=int and whole=int. Set other values as desired/necessary.
 
@@ -96,6 +103,13 @@ def progress_bar(part, whole, percent=True, color='', bg_color='', encapsulate_l
 
         % 1: progress bar displayed
         % 2: digits displayed
+
+    Adjust length of progress bar:
+        Factor must be a factor of 100 and the same factor should be used when calling multiplier_from_inverse_factor
+        as when calling multiplier_from_inverse_factor.
+        1. first set the multiplier (creates a multiplier from a factors apposing factor in the list):
+            multiplier = pyprogress.multiplier_from_inverse_factor(factor=factor)
+        2. call this function.
 
     """
 
