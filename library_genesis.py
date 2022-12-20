@@ -803,9 +803,6 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ Research Arguments ]' + colorama.Style.RESET_ALL)
     print('')
     print('    --research-mode    Specify research mode. Instructs program to run in research mode.\n')
-    print('    -t                 Specify thread count. Used with --research-mode.')
-    print('                       Default thread count is 4. Any thread count over 1 will divide pdf pages of each pdf across n threads specified.')
-    print('                       This can greatly improve performance\n')
     print('    -d                 Specify directory to research. Used with --research-mode.\n')
     print('    --research         Specify research query. Used with --research-mode.')
     print('')
@@ -817,7 +814,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('    library_genesis --download-mode -p 3 -k human')
     print('    library_genesis --download-mode --limit-speed 1024 --retry-max no-limit --search-mode title -k human')
     print('    library_genesis --download-mode -u')
-    print('    library_genesis --research-mode -t 4 -d ./library_genesis/ --research 1984')
+    print("    library_genesis --research-mode -d './library_genesis' --research 1984")
     print('')
     print('-' * 104)
     run_function = 1984
