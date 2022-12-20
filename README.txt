@@ -63,3 +63,13 @@
     library_genesis --research-mode -d './library_genesis' --research 1984
 
 --------------------------------------------------------------------------------------------------------
+
+pylibgen:
+I have included my modified constants.py and my modified pylibgen.py as the mirrors in the pylibgen version
+available using pip uses outdated mirrors. I hope the creator of pylibgen does not mind this update
+(otherwsise pylibgen will not work).
+
+Python 3.10.1
+Created on Platform: Windows 10
+
+--------------------------------------------------------------------------------------------------------
