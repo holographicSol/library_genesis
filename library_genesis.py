@@ -20,8 +20,10 @@ Written by Benjamin Jack Cullen aka Holographic_Sol
         save path (among other operations including a file exist check) before the program can ascertain if the book
         will be skipped or downloaded.
         - recommended to keep book_id.txt unless it grows to large.
-
-todo --> ensure filename to save will be a reasonable length
+        - recommended to keep dl_id.txt unless it grows to large.
+        Any book id in dl_id.txt can also be removed and added to book_id.txt manually:
+            (issues can be resolved by a manual book downlaod --> then add id to book_id.txt manually and remove book
+            id from dl_id.txt manually) then restart the download operation.
 
 """
 from datetime import datetime
@@ -172,112 +174,108 @@ def files_enumerate(path=''):
             if fname.endswith('.pdf'):
                 pdf_max += 1
                 pdf_list.append(os.path.join(dirName, fname))
-                print('[ENUMERATING] ' + str(pdf_max), end='\r', flush=True)
+                print('[ENUMERATING] Files: ' + str(pdf_max), end='\r', flush=True)
     print('\n')
 
 
-def get_pages(path=''):
-    global i_match, threads, verbosity
+def research_files_enumerate(path=''):
+    """ return a list of files """
 
-    i_book = 0
-    i_match = 0
-
-    # create safe filename datetime
-    t = str(datetime.now())
-    t = t.replace(':', '-')
-    t = t.replace('.', '-')
-    t = t.replace(' ', '_')
-
-    # create safe filename search path
-    if '\\' in path:
-        idx = path.rfind('\\')
-        fname_path = path[idx:]
-        fname_path = fname_path.replace('\\', '')
-    elif '/' in path:
-        idx = path.rfind('/')
-        fname_path = path[idx:]
-        fname_path = fname_path.replace('/', '')
-
-    research.r_file = './research/' + t + '_research_'+str(query) + '_[' + str(fname_path) + '].txt'
-    print('[CREATING RESEARCH FILE NAME] ' + str(research.r_file))
-    open(research.r_file, 'w').close()
-    if os.path.exists(research.r_file):
-        print('[SUCCESSFULLY CREATED] Research File')
-        print('')
-
-        for _ in pdf_list:
-
-            i_book += 1
-            print('-' * 150)
-            print('[RESEARCHING] ' + str(query))
-            print('[CURRENT BOOK] ' + str(_))
-            print('[PROGRESS] ' + str(colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_book) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(pdf_max) + colorama.Style.RESET_ALL))
-            print('[TOTAL MATCHES] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_match) + colorama.Style.RESET_ALL)
-
-            try:
-
-                research.i_count_total_pages = 0
-                research.match = 0
-                research.search_library(path=_, query=query)
-                i_match += research.match
-
-            except Exception as e:
-                print('[EXCEPTION] ' + str(e))
-
-            print('-'*150)
-            print('[TOTAL MATCHES] ' + str(i_match))
-    else:
-        print('[ISSUE] Creating Research File')
+    _pdf_list = []
+    pdf_max = 0
+    for dirName, subdirList, fileList in os.walk(path):
+        for fname in fileList:
+            if fname.endswith('.pdf'):
+                pdf_max += 1
+                _pdf_list.append(os.path.join(dirName, fname))
+                print('[ENUMERATING] Files: ' + str(pdf_max), end='\r', flush=True)
+    print('\n')
+    return _pdf_list, pdf_max
 
 
-def search_library(path=''):
+def chunks(pdf_list=[], chunk_count=int):
+    """Yield successive n-sized chunks from a list (not my function) """
 
-    t1 = datetime.now()
-    t1b = time.time()
-    # check_clear()
-    files_enumerate(path=path)
-    get_pages(path=path)
-    t2 = datetime.now()
-    t2b = time.time()
-    print('-'*150)
-    print('')
-    print('[INITIATION TIME]', t1)
-    print('[TIME COMPLETED]', t2)
-    print('[TOTAL TIME]', t2b - t1b)
-    print('')
-    print('-' * 150)
-    print('['+colorama.Style.BRIGHT + colorama.Fore.GREEN + 'COMPLETED' + colorama.Style.RESET_ALL + ']')
-    print('-'*150)
-    print('')
-    if i_match > 0:
-        print('[OPTIONS]')
-        print('\n[1] Display Results')
-        print('[2] Open Results File')
-        print('')
-        opt_input = input('select: ')
-        if opt_input == '1':
-            print('')
-            print('-'*150)
-            print('[RESEARCH RESULTS]')
-            print('')
-            if os.path.exists('./research_' + query + '.txt'):
-                with open('./research_' + query + '.txt', 'r', encoding='utf8') as fo:
+    _chunk_pdf_list = []
+    for i in range(0, len(pdf_list), chunk_count):
+        _chunk_pdf_list.append(pdf_list[i:i + chunk_count])
+    return _chunk_pdf_list
+
+
+def iter_chunk_commands(chunk_pdf_lists=[], search_str=''):
+    """ return a list of commands """
+
+    commands = []
+    _thread_n = 0
+    for _ in chunk_pdf_lists:
+        commands.append(str('python ./research_raw.py "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
+        _thread_n += 1
+    return commands
+
+
+def multiplex_commands(commands=[]):
+    """ executes n commands as subprocesses and waits until all have completed """
+    procs = [subprocess.Popen(i) for i in commands]
+    for p in procs:
+        p.wait()
+
+
+def compile_results(search_str=''):
+    """ reads n files and compiles a list of entries """
+
+    if os.path.exists('./research/' + str(search_str)):
+        print('-- compiling results into single file...')
+        new_file = []
+        for dirName, subdirList, fileList in os.walk('./research/' + str(search_str)):
+            for fname in fileList:
+                fullpath = os.path.join(dirName, fname)
+                with codecs.open(fullpath, 'r') as fo:
                     for line in fo:
                         line = line.strip()
-                        print(line)
+                        if line not in new_file:
+                            new_file.append(line)
                 fo.close()
-        elif opt_input == '2':
-            print('')
-            print('-' * 150)
-            print('[OPENING RESEARCH RESULTS FILE]')
-            f = os.getcwd() + '\\research\\research_' + query + '.txt'
-            os.startfile('"' + f + '"')
+        return new_file
 
-        else:
-            print('')
-            print('-' * 150)
-            print('invalid option!')
-            print('research results file available at location:', os.getcwd() + '\\research\\research_' + query + '.txt')
+
+def compiled_results_to_file(search_str='', results=[]):
+    """ writes results to final research file """
+
+    print('-- writing results to file (this may include results from previous searches):', len(results))
+    open('./research/' + str(search_str) + '.txt', 'w').close()
+    for _ in results:
+        with codecs.open('./research/' + str(search_str) + '.txt', 'a', encoding='utf8') as fo:
+            fo.write(str(_) + '\n')
+        fo.close()
+    print('-- results file compiled.')
+
+
+def search_library(_path='', search_str=''):
+    """ search for x in directory x and write results to file for later """
+
+    _search_str = search_str
+    _path = _path
+    _threads = 16
+
+    _research_files_enumerate = research_files_enumerate(path=_path)
+    _pdf_list = _research_files_enumerate[0]
+    _pdf_max = _research_files_enumerate[1]
+    _chunk_pdf_list = chunks(pdf_list=_pdf_list, chunk_count=_threads)
+
+    t0 = time.time()
+    i_chunk = 0
+    for _chunk_pdf_lists in _chunk_pdf_list:
+        i_chunk += 1
+        _commands = iter_chunk_commands(chunk_pdf_lists=_chunk_pdf_lists, search_str=_search_str)
+        # todo: develop detailed progress for new method (new_method=multi-threaded=current_method)
+        print('[PROGRESS] chunks: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)), end='\r', flush=True)
+        multiplex_commands(commands=_commands)
+    print('\n')
+    print('-- search completed in time:', time.time() - t0)
+
+    _results = compile_results(search_str=_search_str)
+
+    compiled_results_to_file(search_str=_search_str, results=_results)
 
 
 def book_id_check(book_id, check_type):
@@ -981,7 +979,7 @@ elif run_function == 1:
 elif run_function == 2:
     path = dir_
     query = research_str.strip()
-    search_library(path=path)
+    search_library(_path=path, search_str=query)
 
 else:
     if run_function != 1984:
