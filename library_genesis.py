@@ -265,20 +265,23 @@ def compiled_results_to_file(search_str='', results=[]):
     print('[COMPLETED]')
 
 
-def results_handler(search_str=''):
+def results_handler(search_str='', re_display_results=True):
     if os.path.exists('./research/' + str(search_str) + '.txt'):
-        print('')
-        print('A selection from the following may be made:')
+        if re_display_results is True:
+            print('')
+            print('A selection from the following may be made:')
         option_file = []
         with open('./research/' + str(search_str) + '.txt', 'r') as fo:
             i = 0
             for line in fo:
                 line = line.strip()
-                print(' [' + str(i) + '] ' + line)
+                if re_display_results is True:
+                    print(' [' + str(i) + '] ' + line)
                 option_file.append(line)
                 i += 1
         fo.close()
-        print(' [Q] Quit')
+        if re_display_results is True:
+            print(' [Q] Quit')
         print('')
         user_option = input('select: ')
         if user_option == noCase('q'):
@@ -290,7 +293,7 @@ def results_handler(search_str=''):
                 # todo: webbrowser may not always open pdf. explore options
                 webbrowser.open(option_file[user_option], 2)
         if user_option != noCase('q'):
-            results_handler(search_str=search_str)
+            results_handler(search_str=search_str, re_display_results=False)
 
 
 def GetTime(_sec):
@@ -844,6 +847,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('              Intended as an intelligence tool for archiving information in an uncertain world.')
     print('')
     print(' [AUTHOR] Benjamin Jack Cullen.')
+    print('')
     print('')
     print(' [DOWNLOAD]')
     print('')
