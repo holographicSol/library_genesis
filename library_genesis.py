@@ -26,7 +26,8 @@ Written by Benjamin Jack Cullen aka Holographic_Sol
             id from dl_id.txt manually) then restart the download operation.
 
 """
-from datetime import datetime
+import webbrowser
+from datetime import datetime, timedelta
 import os
 import sys
 import time
@@ -165,6 +166,17 @@ def check_clear():
                             pass
 
 
+def display_progress_unknown(str_progress='', progress_list=[], str_pre_append='', str_append=''):
+    """ A simple function to display progress when overall progress is unknown. Useful when a 'whole' is unknown. """
+
+    global i_char_progress
+    print(str_progress + str_pre_append + progress_list[i_char_progress] + str_append, end='\r', flush=True)
+    if i_char_progress == int(len(progress_list))-1:
+        i_char_progress = 0
+    else:
+        i_char_progress += 1
+
+
 def files_enumerate(path=''):
     global pdf_max
     global pdf_list
@@ -178,27 +190,27 @@ def files_enumerate(path=''):
     print('\n')
 
 
-def research_files_enumerate(path=''):
+def research_files_enumerate(_path=''):
     """ return a list of files """
 
     _pdf_list = []
-    pdf_max = 0
-    for dirName, subdirList, fileList in os.walk(path):
+    _pdf_max = 0
+    for dirName, subdirList, fileList in os.walk(_path):
         for fname in fileList:
             if fname.endswith('.pdf'):
-                pdf_max += 1
+                _pdf_max += 1
                 _pdf_list.append(os.path.join(dirName, fname))
-                print('[ENUMERATING] Files: ' + str(pdf_max), end='\r', flush=True)
-    print('\n')
-    return _pdf_list, pdf_max
+                print('[ENUMERATING] Files: ' + str(_pdf_max), end='\r', flush=True)
+    print('')
+    return _pdf_list
 
 
-def chunks(pdf_list=[], chunk_count=int):
+def chunks(_pdf_list=[], chunk_count=int):
     """Yield successive n-sized chunks from a list (not my function) """
 
     _chunk_pdf_list = []
-    for i in range(0, len(pdf_list), chunk_count):
-        _chunk_pdf_list.append(pdf_list[i:i + chunk_count])
+    for i in range(0, len(_pdf_list), chunk_count):
+        _chunk_pdf_list.append(_pdf_list[i:i + chunk_count])
     return _chunk_pdf_list
 
 
@@ -208,7 +220,7 @@ def iter_chunk_commands(chunk_pdf_lists=[], search_str=''):
     commands = []
     _thread_n = 0
     for _ in chunk_pdf_lists:
-        commands.append(str('python ./research_raw.py "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
+        commands.append(str('./research_raw.exe "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
         _thread_n += 1
     return commands
 
@@ -224,58 +236,121 @@ def compile_results(search_str=''):
     """ reads n files and compiles a list of entries """
 
     if os.path.exists('./research/' + str(search_str)):
-        print('-- compiling results into single file...')
+        # print('-- compiling results into single file...')
         new_file = []
         for dirName, subdirList, fileList in os.walk('./research/' + str(search_str)):
             for fname in fileList:
                 fullpath = os.path.join(dirName, fname)
                 with codecs.open(fullpath, 'r') as fo:
                     for line in fo:
+                        pyprogress.display_progress_unknown(str_progress='[COMPILING RESULTS] ', progress_list=pyprogress.arrow_a, color='CYAN')
                         line = line.strip()
                         if line not in new_file:
                             new_file.append(line)
                 fo.close()
+        print('')
         return new_file
 
 
 def compiled_results_to_file(search_str='', results=[]):
     """ writes results to final research file """
 
-    print('-- writing results to file (this may include results from previous searches):', len(results))
+    print('[WRITING] Research file (this may include results from previous searches). Total Results:', len(results))
     open('./research/' + str(search_str) + '.txt', 'w').close()
     for _ in results:
         with codecs.open('./research/' + str(search_str) + '.txt', 'a', encoding='utf8') as fo:
+            pyprogress.display_progress_unknown(str_progress='[WRITING] ', progress_list=pyprogress.arrow_a, color='CYAN')
             fo.write(str(_) + '\n')
         fo.close()
-    print('-- results file compiled.')
+    print('')
+    print('[COMPLETED]')
 
 
-def search_library(_path='', search_str=''):
+def results_handler(search_str=''):
+    if os.path.exists('./research/' + str(search_str) + '.txt'):
+        print('')
+        print('A selection from the following may be made:')
+        option_file = []
+        with open('./research/' + str(search_str) + '.txt', 'r') as fo:
+            i = 0
+            for line in fo:
+                line = line.strip()
+                print(' [' + str(i) + '] ' + line)
+                option_file.append(line)
+                i += 1
+        fo.close()
+        print(' [Q] Quit')
+        print('')
+        user_option = input('select: ')
+        if user_option == noCase('q'):
+            print('-- exiting...')
+            print('')
+        elif user_option.isdigit():
+            user_option = int(user_option)
+            if user_option < len(option_file):
+                # todo: webbrowser may not always open pdf. explore options
+                webbrowser.open(option_file[user_option], 2)
+        if user_option != noCase('q'):
+            results_handler(search_str=search_str)
+
+
+def GetTime(_sec):
+    sec = timedelta(seconds=int(_sec))
+    d = datetime(1, 1, 1) + sec
+    # print("DAYS:HOURS:MIN:SEC")
+    return str("%d:%d:%d:%d" % (d.day-1, d.hour, d.minute, d.second))
+
+
+def research_progress(i_chunk=int, _commands=[], len_pdf_list=int, _chunk_pdf_list=int, elapsed_time=str):
+    prc_total = float(float(int(100) * float((float(i_chunk * len(_commands)) / int(len_pdf_list)))) * 1)
+    print('[PROGRESS] [chunk: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)) + '] [' + str(i_chunk * len(_commands)) + '/' + str(len_pdf_list) + ' files] [' + str(prc_total) + '%] [total time taken: ' + str(elapsed_time) + ']', end='\r', flush=True)
+
+
+def search_library(_path='', search_str='', _threads=int):
     """ search for x in directory x and write results to file for later """
 
-    _search_str = search_str
     _path = _path
-    _threads = 16
+    _search_str = search_str
+    _threads = _threads
 
-    _research_files_enumerate = research_files_enumerate(path=_path)
-    _pdf_list = _research_files_enumerate[0]
-    _pdf_max = _research_files_enumerate[1]
-    _chunk_pdf_list = chunks(pdf_list=_pdf_list, chunk_count=_threads)
+    _pdf_list = research_files_enumerate(_path=_path)
+    len_pdf_list = int(len(_pdf_list))
+    _chunk_pdf_list = chunks(_pdf_list=_pdf_list, chunk_count=_threads)
 
     t0 = time.time()
     i_chunk = 0
     for _chunk_pdf_lists in _chunk_pdf_list:
-        i_chunk += 1
+
         _commands = iter_chunk_commands(chunk_pdf_lists=_chunk_pdf_lists, search_str=_search_str)
-        # todo: develop detailed progress for new method (new_method=multi-threaded=current_method)
-        print('[PROGRESS] chunks: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)), end='\r', flush=True)
+
+        research_progress(i_chunk=i_chunk, _commands=_commands, len_pdf_list=len_pdf_list, _chunk_pdf_list=_chunk_pdf_list, elapsed_time=str(GetTime(time.time() - t0)))
+
         multiplex_commands(commands=_commands)
+        i_chunk += 1
+
+        research_progress(i_chunk=i_chunk, _commands=_commands, len_pdf_list=len_pdf_list, _chunk_pdf_list=_chunk_pdf_list, elapsed_time=str(GetTime(time.time() - t0)))
+
     print('\n')
-    print('-- search completed in time:', time.time() - t0)
 
     _results = compile_results(search_str=_search_str)
 
     compiled_results_to_file(search_str=_search_str, results=_results)
+
+    # todo: finnish results handler function: continued in results_handler
+    print('')
+    if len(_results) > 0:
+        if len(_results) <= 100:
+            user_input = input('display results?: ')
+            if user_input == noCase('y'):
+                results_handler(search_str=search_str)
+            else:
+                print('')
+                print('[COMPLETE]')
+                print('[FILE] ./research/' + str(search_str) + '.txt')
+        else:
+            print('')
+            print('[RESULTS] Likely exceed buffer size so please refer to the file to see reults. ')
+            print('[FILE] ./research/' + str(search_str) + '.txt')
 
 
 def book_id_check(book_id, check_type):
@@ -823,6 +898,8 @@ search_mode_ = ''
 research_str = ''
 i_page_ = ''
 print('')
+print('-'*100)
+print('')
 if '--download-mode' in sys.argv and not '-u' in sys.argv:
     print('[LIBRARY GENESIS EXE]')
     print('[MODE] Download')
@@ -979,7 +1056,7 @@ elif run_function == 1:
 elif run_function == 2:
     path = dir_
     query = research_str.strip()
-    search_library(_path=path, search_str=query)
+    search_library(_path=path, search_str=query, _threads=threads)
 
 else:
     if run_function != 1984:
