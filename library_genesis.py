@@ -887,7 +887,6 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print("    library_genesis --research-mode -d './library_genesis' --research 1984")
     print("    library_genesis --research-mode -t 8 -d './library_genesis' --research 1984")
     print('')
-    print('-' * 104)
     run_function = 1984
 
 # Parse arguments
@@ -1061,5 +1060,5 @@ else:
         print('\nUse -h for help.')
 
 # final
-print('\n')
+print('')
 colorama.Style.RESET_ALL
