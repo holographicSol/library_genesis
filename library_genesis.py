@@ -296,7 +296,6 @@ def results_handler(search_str=''):
 def GetTime(_sec):
     sec = timedelta(seconds=int(_sec))
     d = datetime(1, 1, 1) + sec
-    # print("DAYS:HOURS:MIN:SEC")
     return str("%d:%d:%d:%d" % (d.day-1, d.hour, d.minute, d.second))
 
 
@@ -335,7 +334,7 @@ def search_library(_path='', search_str='', _threads=2):
 
     compiled_results_to_file(search_str=_search_str, results=_results)
 
-    # todo: finnish results handler function: continued in results_handler
+    # todo: finnish results handler functionality.
     print('')
     if len(_results) > 0:
         if len(_results) <= 100:
@@ -831,63 +830,59 @@ def summary():
 
 
 # Help menu
+# todo: refacter --throttle to --throttle
+# todo compact the menu superbytes style: emphasis to importance / clarity / compact
 if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print('-'*104)
     print('')
-    print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ LIBRARY GENESIS DOWNLOAD & RESEARCH TOOL ]' + colorama.Style.RESET_ALL)
+    print(' [LIBRARY GENESIS DOWNLOAD & RESEARCH TOOL]')
     print('')
-    print('-' * 104)
     print('')
-    print('    Intended as an intelligence tool for archiving information in an uncertain world.')
-    print('    Downloads every book on every page for keyword specified.')
-    print('    Also provides function to compile and save a list of reading material relative to search terms(s)')
-    print('    to aid and assist in research when dealing with large libraries.')
-    print('    Written by Benjamin Jack Cullen.')
+    print(' [DESCRIPTION]')
+    print('              Downloads and researches a digital library.')
+    print('              Intended as an intelligence tool for archiving information in an uncertain world.')
     print('')
-    print('-' * 104)
     print('')
-    print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ Download Arguments ]' + colorama.Style.RESET_ALL)
+    print(' [DOWNLOAD]')
     print('')
-    print('    -h                 Displays this help message.\n')
-    print('    -k                 Keyword. Specify keyword(s). Should always be the last argument.')
-    print('                       Anything after -k will be treated as a keyword(s).\n')
-    print('    -p                 Page. Specify start page number. Default is 0.\n')
-    print('    -u                 Update. Update an existing library genesis directory.')
-    print('                       Each directory name in an existing ./library_genesis directory will')
-    print('                       be used as a search term during update process.\n')
-    print('    --download-mode    Instructs program to run in download mode.\n')
-    print('    --retry-max        Max number of retries for an incomplete download.')
-    print('                       Can be set to no-limit to keep trying if an exception is encountered.')
-    print('                       Default is 3. Using no-limit is always recommended. ')
-    print('                       If issues are encountered then specify number.\n')
-    print('    --search-mode      Specify search mode. Default is title')
-    print('                       --search-mode title')
-    print('                       --search-mode author')
-    print('                       --search-mode isbn\n')
-    print('    --limit-speed      Throttle download speed. Specify bytes per second in digits.')
-    print('                       1024 bytes = 1KB. Use a calculator if you need it.')
-    print('                       Example: --limit-speed 1024')
-    print('                       Default is 0 (unlimited).')
+    print('   [-h]              [Displays this help message]')
+    print('   [-k]              [Keyword. Specify keyword(s). Should always be the last argument]')
+    print('                     [Anything after -k will be treated as a keyword(s). (MUST be specified last)]')
+    print('   [-p]              [Page. Specify start page number. Default is 0]')
+    print('   [-u]              [Update. Update an existing library genesis directory]')
+    print('                     [Each directory name in an existing ./library_genesis directory will')
+    print('                      be used as a search term during update process. (EXPERIMENTAL)]')
+    print('   [--download-mode] [Instructs program to run in download mode]')
+    print('   [--retry-max]     [Max number of retries for an incomplete download]')
+    print('                     [Can be set to no-limit to keep trying if an exception is encountered]')
+    print('                     [Default is 3. Using no-limit is always recommended]')
+    print('                     [If issues are encountered then specify number]')
+    print('   [--search-mode]   [Specify search mode. Default is title if --search-mode is unspecified]')
+    print('                     [--search-mode title]')
+    print('                     [--search-mode author]')
+    print('                     [--search-mode isbn]')
+    print('   [--throttle]      [Throttle download speed. Specify bytes per second in digits]')
+    print('                     [1024 bytes = 1KB. Use a calculator if you need it]')
+    print('                     [Example: --throttle 1024]')
+    print('                     [Default is 0 (unlimited)]')
     print('')
-    print('-' * 104)
     print('')
-    print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ Research Arguments ]' + colorama.Style.RESET_ALL)
+    print(' [RESEARCH]')
     print('')
-    print('    --research-mode    Specify research mode. Instructs program to run in research mode.\n')
-    print('    -t                 Threads. Specify number of files that will be processed simultaneously.')
-    print('                       Default is 2.\n')
-    print('    -d                 Specify directory to research. Used with --research-mode.\n')
-    print('    --research         Specify research query. Used with --research-mode.')
-    print('                       This argument MUST be specified last!')
+    print('   [--research-mode] [Specify research mode. Instructs program to run in research mode]')
+    print('   [-t]              [Threads. Specify number of files that will be processed simultaneously]')
+    print('                     [Default is 2 -f -t is unspecified]')
+    print('   [-d]              [Specify directory to research. Used with --research-mode]')
+    print('   [--research]      [Specify research query. Used with --research-mode]')
+    print('                     [This argument MUST be specified last]')
     print('')
-    print('-' * 104)
     print('')
-    print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ EXAMPLE USAGE ]' + colorama.Style.RESET_ALL)
+    print(' [EXAMPLES]')
     print('')
     print('    library_genesis --download-mode -k human')
     print('    library_genesis --download-mode -p 3 -k human')
-    print('    library_genesis --download-mode --limit-speed 1024 --retry-max no-limit --search-mode title -k human')
+    print('    library_genesis --download-mode --throttle 1024 --retry-max no-limit --search-mode title -k human')
     print('    library_genesis --download-mode -u')
     print("    library_genesis --research-mode -d './library_genesis' --research 1984")
     print("    library_genesis --research-mode -t 8 -d './library_genesis' --research 1984")
@@ -962,12 +957,12 @@ if '--download-mode' in sys.argv and not '-u' in sys.argv:
                 break
 
         # throttle download speed
-        elif _ == '--limit-speed':
+        elif _ == '--throttle':
             if sys.argv[i+1].isdigit():
                 limit_speed = int(sys.argv[i+1])
                 human_limit_speed = str(convert_bytes(int(limit_speed)))
             else:
-                print(get_dt() + "[failed] --limit-speed accepts digits argument.")
+                print(get_dt() + "[failed] --throttle accepts digits argument.")
                 run_function = 1984
                 break
 
