@@ -872,7 +872,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print('   [--research-mode] [Specify research mode. Instructs program to run in research mode]')
     print('   [-t]              [Threads. Specify number of files that will be processed simultaneously]')
-    print('                     [Default is 2 -f -t is unspecified]')
+    print('                     [Default is 2 if -t is unspecified]')
     print('   [-d]              [Specify directory to research. Used with --research-mode]')
     print('   [--research]      [Specify research query. Used with --research-mode]')
     print('                     [This argument MUST be specified last]')
