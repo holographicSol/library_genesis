@@ -6,6 +6,7 @@
  [DESCRIPTION]
               Downloads and researches a digital library.
               Intended as an intelligence tool for archiving information in an uncertain world.
+              Written by Benjamin Jack Cullen.
 
 
  [DOWNLOAD]
@@ -54,10 +55,14 @@
 --------------------------------------------------------------------------------------------------------
 
  [DEVELOPER]
-   pylibgen:
+
+   [PYLIBGEN]
    I have included my modified constants.py and my modified pylibgen.py as the mirrors in the pylibgen version
    available using pip uses outdated mirrors. I hope the creator of pylibgen does not mind this update
-   (otherwsise pylibgen will not work).
+   (otherwsise pylibgen will not work due to pylibgen's mirrors being outdated which I have fixed).
 
+   [PYTHON]
    Python 3.10.1
-   Created on Platform: Windows 10
+
+   [OS]
+   Created and tested on: Windows 10
