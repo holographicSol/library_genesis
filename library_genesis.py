@@ -220,7 +220,7 @@ def iter_chunk_commands(chunk_pdf_lists=[], search_str=''):
     commands = []
     _thread_n = 0
     for _ in chunk_pdf_lists:
-        commands.append(str('./research_raw.py "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
+        commands.append(str('python ./research_raw.py "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
         _thread_n += 1
     return commands
 
