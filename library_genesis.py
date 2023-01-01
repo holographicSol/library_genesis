@@ -220,7 +220,7 @@ def iter_chunk_commands(chunk_pdf_lists=[], search_str=''):
     commands = []
     _thread_n = 0
     for _ in chunk_pdf_lists:
-        commands.append(str('./research_raw.exe "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
+        commands.append(str('./research_raw.py "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
         _thread_n += 1
     return commands
 
@@ -236,7 +236,6 @@ def compile_results(search_str=''):
     """ reads n files and compiles a list of entries """
 
     if os.path.exists('./research/' + str(search_str)):
-        # print('-- compiling results into single file...')
         new_file = []
         for dirName, subdirList, fileList in os.walk('./research/' + str(search_str)):
             for fname in fileList:
@@ -306,7 +305,7 @@ def research_progress(i_chunk=int, _commands=[], len_pdf_list=int, _chunk_pdf_li
     print('[PROGRESS] [chunk: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)) + '] [' + str(i_chunk * len(_commands)) + '/' + str(len_pdf_list) + ' files] [' + str(prc_total) + '%] [total time taken: ' + str(elapsed_time) + ']', end='\r', flush=True)
 
 
-def search_library(_path='', search_str='', _threads=int):
+def search_library(_path='', search_str='', _threads=2):
     """ search for x in directory x and write results to file for later """
 
     _path = _path
@@ -876,8 +875,11 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print(colorama.Style.BRIGHT + colorama.Fore.GREEN + '    [ Research Arguments ]' + colorama.Style.RESET_ALL)
     print('')
     print('    --research-mode    Specify research mode. Instructs program to run in research mode.\n')
+    print('    -t                 Threads. Specify number of files that will be processed simultaneously.')
+    print('                       Default is 2.\n')
     print('    -d                 Specify directory to research. Used with --research-mode.\n')
     print('    --research         Specify research query. Used with --research-mode.')
+    print('                       This argument MUST be specified last!')
     print('')
     print('-' * 104)
     print('')
@@ -888,6 +890,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('    library_genesis --download-mode --limit-speed 1024 --retry-max no-limit --search-mode title -k human')
     print('    library_genesis --download-mode -u')
     print("    library_genesis --research-mode -d './library_genesis' --research 1984")
+    print("    library_genesis --research-mode -t 8 -d './library_genesis' --research 1984")
     print('')
     print('-' * 104)
     run_function = 1984
