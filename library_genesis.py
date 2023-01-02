@@ -899,12 +899,12 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print(' [EXAMPLES]')
     print('')
-    print('   library_genesis --download-mode -k human')
-    print('   library_genesis --download-mode -p 3 -k human')
-    print('   library_genesis --download-mode --throttle 1024 --retry-max unlimited --search-mode title -k human')
+    print('   library_genesis --download-mode -k robots')
+    print('   library_genesis --download-mode -p 3 -k robots')
+    print('   library_genesis --download-mode --throttle 1024 --retry-max unlimited --search-mode title -k robots')
     # print('    library_genesis --download-mode -u')
-    print("   library_genesis --research-mode -d './library_genesis' --research 1984")
-    print("   library_genesis --research-mode -t 8 -d './library_genesis' --research 1984")
+    print("   library_genesis --research-mode -d './library_genesis' --research robots")
+    print("   library_genesis --research-mode -t 8 -d './library_genesis' --research robots")
     print('')
     run_function = 1984
 
