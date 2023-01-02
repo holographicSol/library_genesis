@@ -113,6 +113,7 @@ threads = 4
 i_match = 0
 query = ''
 verbosity = False
+bool_no_cover = False
 
 book_id_store = []
 no_ext = []
@@ -164,6 +165,10 @@ def check_clear():
                             os.remove(fullpath)
                         except Exception as e:
                             pass
+
+
+def iter_items(_pythonic_list, i):
+    return _pythonic_list[i]
 
 
 def display_progress_unknown(str_progress='', progress_list=[], str_pre_append='', str_append=''):
@@ -561,6 +566,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
         try:
             http = urllib3.PoolManager(retries=retries)
             r = http.request('GET', href, preload_content=False, headers=headers)
+            _data = []
             while True:
 
                 if limit_speed == 0:
@@ -656,7 +662,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 def enumerate_book(search_q, f_dir, lookup_ids):
     """ obtains book details using book id and calls dl function if certain conditions are met """
 
-    global ids_, dl_method, max_retry_i, no_md5, no_ext, failed, total_books, total_i
+    global ids_, dl_method, max_retry_i, no_md5, no_ext, failed, total_books, total_i, bool_no_cover
     i = 0
     i_update = 0
     save_path = ''
@@ -731,21 +737,23 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                                 break
                     break
 
-                img_ = ''
-                for link in soup.find_all('img'):
-                    src = (link.get('src'))
-                    if src:
-                        if src.endswith('.jpg'):
-                            print(get_dt() + '[IMAGE] ' + str(src))
-                            img_ = 'http://library.lol/' + src
-                            break
+                if bool_no_cover is False:
+                    img_ = ''
+                    for link in soup.find_all('img'):
+                        src = (link.get('src'))
+                        if src:
+                            if src.endswith('.jpg'):
+                                print(get_dt() + '[IMAGE] ' + str(src))
+                                img_ = 'http://library.lol/' + src
+                                break
 
                 if ext:
                     print(get_dt() + '[EXTENSION] ' + str(ext))
                     save_path = f_dir + "".join([c for c in title if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                     save_path = save_path + ' (by ' + "".join([c for c in author if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
                     save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')_' + book_id + ext
-                    save_path_img = save_path + '.jpg'
+                    if bool_no_cover is False:
+                        save_path_img = save_path + '.jpg'
 
                     if len(save_path) >= 255:
                         save_path = save_path[:259+len(ext)]
@@ -753,25 +761,28 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                         print(get_dt() + '[LIMITING FILENAME LENGTH]' + str(save_path))
 
                     # dl book cover
-                    if not os.path.exists(save_path_img):
-                        try:
-                            # print(get_dt() + '[SAVING] [COVER] ' + str(save_path_img))  # uncomment to display path
-                            print(get_dt() + '[SAVING] [COVER]')
-                            http = urllib3.PoolManager(retries=retries)
-                            r = http.request('GET', img_, preload_content=False, headers=headers)
-                            with open(save_path_img, 'wb') as fo:
-                                while True:
-                                    data = r.read(1024)
-                                    if not data:
-                                        break
-                                    fo.write(data)
-                            fo.close()
-                        except Exception as e:
-                            print(get_dt() + '[SAVING] [COVER] failed')
-                        try:
-                            r.release_conn()
-                        except:
-                            pass
+                    if bool_no_cover is False:
+                        if not os.path.exists(save_path_img):
+                            try:
+                                # print(get_dt() + '[SAVING] [COVER] ' + str(save_path_img))  # uncomment to display path
+                                print(get_dt() + '[SAVING] [COVER]')
+                                http = urllib3.PoolManager(retries=retries)
+                                r = http.request('GET', img_, preload_content=False, headers=headers)
+                                with open(save_path_img, 'wb') as fo:
+                                    while True:
+                                        data = r.read(1024)
+                                        if not data:
+                                            break
+                                        fo.write(data)
+                                fo.close()
+                            except Exception as e:
+                                print(get_dt() + '[SAVING] [COVER] failed')
+                            try:
+                                r.release_conn()
+                            except:
+                                pass
+                    else:
+                        print(get_dt() + '[COVER] Skipping cover download.')
 
                     # dl book
                     allow_dl = False
@@ -833,8 +844,6 @@ def summary():
 
 
 # Help menu
-# todo: refacter --throttle to --throttle
-# todo compact the menu superbytes style: emphasis to importance / clarity / compact
 if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print('-'*104)
@@ -843,10 +852,12 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print('')
     print(' [DESCRIPTION]')
-    print('              Downloads and researches a digital library.')
-    print('              Intended as an intelligence tool for archiving information in an uncertain world.')
     print('')
-    print(' [AUTHOR] Benjamin Jack Cullen.')
+    print('               [In the name of intelligence]')
+    print('               [Downloads and researches a digital library]')
+    print('               [Intended as an intelligence tool for archiving information in an uncertain world]')
+    print('')
+    print('               [AUTHOR] [Benjamin Jack Cullen]')
     print('')
     print('')
     print(' [DOWNLOAD]')
@@ -855,9 +866,9 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('   [-k]              [Keyword. Specify keyword(s). Should always be the last argument]')
     print('                     [Anything after -k will be treated as a keyword(s). (MUST be specified last)]')
     print('   [-p]              [Page. Specify start page number. Default is 0]')
-    print('   [-u]              [Update. Update an existing library genesis directory]')
-    print('                     [Each directory name in an existing ./library_genesis directory will')
-    print('                      be used as a search term during update process. (EXPERIMENTAL)]')
+    # print('   [-u]              [Update. Update an existing library genesis directory]')  # todo: update
+    # print('                     [Each directory name in an existing ./library_genesis directory will')
+    # print('                      be used as a search term during update process. (EXPERIMENTAL)]')
     print('   [--download-mode] [Instructs program to run in download mode]')
     print('   [--retry-max]     [Max number of retries for an incomplete download]')
     print('                     [Can be set to no-limit to keep trying if an exception is encountered]')
@@ -867,6 +878,8 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('                     [--search-mode title]')
     print('                     [--search-mode author]')
     print('                     [--search-mode isbn]')
+    print('   [--no-cover]      [No Cover. Book covers will not be downloaded.]')
+    print('                     [Covers are downloaded by default.]')
     print('   [--throttle]      [Throttle download speed. Specify bytes per second in digits]')
     print('                     [1024 bytes = 1KB. Use a calculator if you need it]')
     print('                     [Example: --throttle 1024]')
@@ -883,12 +896,12 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print(' [EXAMPLES]')
     print('')
-    print('    library_genesis --download-mode -k human')
-    print('    library_genesis --download-mode -p 3 -k human')
-    print('    library_genesis --download-mode --throttle 1024 --retry-max no-limit --search-mode title -k human')
-    print('    library_genesis --download-mode -u')
-    print("    library_genesis --research-mode -d './library_genesis' --research 1984")
-    print("    library_genesis --research-mode -t 8 -d './library_genesis' --research 1984")
+    print('   library_genesis --download-mode -k human')
+    print('   library_genesis --download-mode -p 3 -k human')
+    print('   library_genesis --download-mode --throttle 1024 --retry-max no-limit --search-mode title -k human')
+    # print('    library_genesis --download-mode -u')
+    print("   library_genesis --research-mode -d './library_genesis' --research 1984")
+    print("   library_genesis --research-mode -t 8 -d './library_genesis' --research 1984")
     print('')
     run_function = 1984
 
@@ -968,17 +981,21 @@ if '--download-mode' in sys.argv and not '-u' in sys.argv:
                 run_function = 1984
                 break
 
+        elif _ == '--no-cover':
+            bool_no_cover = True
+
         i += 1
 
-elif '-u' in sys.argv and '--download-mode' in sys.argv:
-    print('[LIBRARY GENESIS EXE]')
-    print('[MODE] Update')
-    # update
-    if len(sys.argv) == 3:
-        run_function = 1
-    else:
-        print(get_dt() + '[failed] update switch takes no other arguments.')
-        run_function = 1984
+# todo: update before final integration
+# elif '-u' in sys.argv and '--download-mode' in sys.argv:
+#     print('[LIBRARY GENESIS EXE]')
+#     print('[MODE] Update')
+#     # update
+#     if len(sys.argv) == 3:
+#         run_function = 1
+#     else:
+#         print(get_dt() + '[failed] update switch takes no other arguments.')
+#         run_function = 1984
 
 elif '--research-mode' in sys.argv:
     print('[LIBRARY GENESIS EXE]')
@@ -1030,27 +1047,28 @@ if run_function == 0:
             i_page += 1
     summary()
 
-# download in update mode
-elif run_function == 1:
-    clear_console()
-    book_id_check(book_id='', check_type='read-file')
-    print(get_dt() + '[Update Library]')
-    update_max = 0
-    search_q = []
-    for dirname, dirnames, filenames in os.walk(d_library_genesis):
-        for subdirname in dirnames:
-            fullpath = os.path.join(subdirname)
-            search_q.append(fullpath)
-            print('    [update] ' + str(fullpath))
-            update_max += 1
-    i_query = 0
-    dl_method = 'update'
-    for _ in search_q:
-        i_page = 1
-        print(get_dt() + '[updating] ' + str(_))
-        compile_ids(search_q[i_query], i_page)
-        i_query += 1
-    summary()
+# todo --> update before final integration
+# # download in update mode
+# elif run_function == 1:
+#     clear_console()
+#     book_id_check(book_id='', check_type='read-file')
+#     print(get_dt() + '[Update Library]')
+#     update_max = 0
+#     search_q = []
+#     for dirname, dirnames, filenames in os.walk(d_library_genesis):
+#         for subdirname in dirnames:
+#             fullpath = os.path.join(subdirname)
+#             search_q.append(fullpath)
+#             print('    [update] ' + str(fullpath))
+#             update_max += 1
+#     i_query = 0
+#     dl_method = 'update'
+#     for _ in search_q:
+#         i_page = 1
+#         print(get_dt() + '[updating] ' + str(_))
+#         compile_ids(search_q[i_query], i_page)
+#         i_query += 1
+#     summary()
 
 # research
 elif run_function == 2:
