@@ -225,7 +225,10 @@ def iter_chunk_commands(chunk_pdf_lists=[], search_str=''):
     commands = []
     _thread_n = 0
     for _ in chunk_pdf_lists:
-        commands.append(str('python ./research_raw.py "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
+        # uncomment for: source code version
+        # commands.append(str('python ./research_raw.py "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
+        # uncomment for: compiled version
+        commands.append(str('./research_raw.exe "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
         _thread_n += 1
     return commands
 
@@ -648,7 +651,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                 time.sleep(3)
                 dl(href, save_path, str_filesize, filesize, title, author, year, book_id)
 
-        elif str(max_retry) == 'no-limit':
+        elif str(max_retry) == 'unlimited':
 
             clear_console_line(char_limit=char_limit)
             pr_str = str(get_dt() + '[RETRYING] ' + str(max_retry_i)) + ' / ' + str(max_retry)
@@ -871,8 +874,8 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     # print('                      be used as a search term during update process. (EXPERIMENTAL)]')
     print('   [--download-mode] [Instructs program to run in download mode]')
     print('   [--retry-max]     [Max number of retries for an incomplete download]')
-    print('                     [Can be set to no-limit to keep trying if an exception is encountered]')
-    print('                     [Default is 3. Using no-limit is always recommended]')
+    print('                     [Can be set to unlimited to keep trying if an exception is encountered]')
+    print('                     [Default is 3. Using unlimited is always recommended]')
     print('                     [If issues are encountered then specify number]')
     print('   [--search-mode]   [Specify search mode. Default is title if --search-mode is unspecified]')
     print('                     [--search-mode title]')
@@ -898,7 +901,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print('   library_genesis --download-mode -k human')
     print('   library_genesis --download-mode -p 3 -k human')
-    print('   library_genesis --download-mode --throttle 1024 --retry-max no-limit --search-mode title -k human')
+    print('   library_genesis --download-mode --throttle 1024 --retry-max unlimited --search-mode title -k human')
     # print('    library_genesis --download-mode -u')
     print("   library_genesis --research-mode -d './library_genesis' --research 1984")
     print("   library_genesis --research-mode -t 8 -d './library_genesis' --research 1984")
@@ -950,7 +953,7 @@ if '--download-mode' in sys.argv and not '-u' in sys.argv:
             retry_max_ = sys.argv[i + 1]
             if str(sys.argv[i+1]).isdigit():
                 max_retry = int(sys.argv[i+1])
-            elif str(sys.argv[i+1]) == 'no-limit':
+            elif str(sys.argv[i+1]) == 'unlimited':
                 max_retry = str(sys.argv[i+1])
             else:
                 print(get_dt() + '[failed] --retry-max cannot be ' + retry_max_)
