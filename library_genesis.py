@@ -489,9 +489,9 @@ def enumerate_ids():
                     ids_n.append(_)
         except Exception as e:
             # todo: expand handling
-            print(e, end='\r', flush=True)
             add_page = False
-            if 'Connection aborted.' in str(e) or '500 Server Error: Internal' in str(e):
+            if 'Connection aborted.' in str(e):
+                print(e, end='\r', flush=True)
                 time.sleep(5)
                 enumerate_ids()
         if not ids:
@@ -499,9 +499,7 @@ def enumerate_ids():
         else:
             page_max += 1
             i_page += 1
-    # print('')
-    # print('_' * 88)
-    print('')
+    print('\n')
     print(get_dt() + '[KEYWORD] ' + str(search_q))
     print(get_dt() + '[BOOKS] ' + str(len(ids_n)))
     print(get_dt() + '[PAGES] ' + str(i_page-1))
@@ -1088,5 +1086,5 @@ else:
         print('\nUse -h for help.')
 
 # final
-print('')
+print('\n')
 colorama.Style.RESET_ALL
