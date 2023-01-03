@@ -278,6 +278,7 @@ def results_handler(search_str='', re_display_results=True):
         if re_display_results is True:
             print('')
             print('A selection from the following may be made:')
+            print('')
         option_file = []
         with open('./research/' + str(search_str) + '.txt', 'r') as fo:
             i = 0
@@ -293,7 +294,8 @@ def results_handler(search_str='', re_display_results=True):
         print('')
         user_option = input('select: ')
         if user_option == noCase('q'):
-            print('-- exiting...')
+            print('')
+            print('[EXITING]')
             print('')
         elif user_option.isdigit():
             user_option = int(user_option)
@@ -311,8 +313,9 @@ def GetTime(_sec):
 
 
 def research_progress(i_chunk=int, _commands=[], len_pdf_list=int, _chunk_pdf_list=int, elapsed_time=str):
-    prc_total = float(float(int(100) * float((float(i_chunk * len(_commands)) / int(len_pdf_list)))) * 1)
-    print('[PROGRESS] [chunk: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)) + '] [' + str(i_chunk * len(_commands)) + '/' + str(len_pdf_list) + ' files] [' + str(prc_total) + '%] [total time taken: ' + str(elapsed_time) + ']', end='\r', flush=True)
+    # todo: fix percent and parts to display correctly and ensure the whole line is cleared before printing.
+
+    print('[PROGRESS] [chunk: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)) + '] [total time taken: ' + str(elapsed_time) + ']', end='\r', flush=True)
 
 
 def search_library(_path='', search_str='', _threads=2):
@@ -862,7 +865,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print('               [AUTHOR] [Benjamin Jack Cullen]')
     print('')
-    print('')
+    # print('')
     print(' [DOWNLOAD]')
     print('')
     print('   [-h]              [Displays this help message]')
