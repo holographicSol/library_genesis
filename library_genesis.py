@@ -149,7 +149,7 @@ def color(s=str, c=str):
 def get_dt():
     """ create a datetime string """
     dt = datetime.now()
-    dt = '[' + str(dt) + '] '
+    dt = ' [' + str(dt) + '] '
     return dt
 
 
@@ -474,9 +474,6 @@ def enumerate_ids():
     # todo: simplify/reduce function size
 
     global page_max, search_q, total_books
-    print('_' * 88)
-    print('')
-    print(get_dt() + '[ENUMERATION]')
     print('')
     i_page = 1
     add_page = True
@@ -492,16 +489,19 @@ def enumerate_ids():
                     ids_n.append(_)
         except Exception as e:
             # todo: expand handling
-            print(e)
+            print(e, end='\r', flush=True)
             add_page = False
+            if 'Connection aborted.' in str(e) or '500 Server Error: Internal' in str(e):
+                time.sleep(5)
+                enumerate_ids()
         if not ids:
             add_page = False
         else:
             page_max += 1
             i_page += 1
+    print('')
     print('_' * 88)
     print('')
-    print(get_dt() + '[ENUMERATION SUMMARY]')
     print(get_dt() + '[KEYWORD] ' + str(search_q))
     print(get_dt() + '[BOOKS] ' + str(len(ids_n)))
     print(get_dt() + '[PAGES] ' + str(i_page-1))
@@ -514,7 +514,7 @@ def compile_ids(search_q, i_page):
     global ids_
     print('_' * 88)
     print('')
-    print(get_dt() + '[COMPILE IDS]')
+    print(get_dt() + '[PAGE] ' + str(i_page))
     ids_ = []
     f_dir = d_library_genesis + '/' + search_q + '/'
     try:
@@ -524,10 +524,10 @@ def compile_ids(search_q, i_page):
     except Exception as e:
         # todo: expand handling
         print(get_dt() + str(e))
-        time.sleep(1)
+        time.sleep(3)
         compile_ids(search_q, i_page)
     lookup_ids = library_.lookup(ids_)
-    print(get_dt() + '[PAGE] ' + str(i_page))
+
     print(get_dt() + '[BOOKS] ' + str(len(ids_)))
     if ids_:
         ensure_library_path()
@@ -632,7 +632,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
             if max_retry_i < max_retry:
 
                 clear_console_line(char_limit=char_limit)
-                pr_str = str(get_dt() + '[' + color(s='RETRYING', c='Y') + ']' + str(max_retry_i)) + ' / ' + str(max_retry)
+                pr_str = str(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i)) + ' / ' + str(max_retry)
                 pr_technical_data(pr_str)
                 char_limit = int(len(pr_str))
 
@@ -642,7 +642,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
         elif str(max_retry) == 'unlimited':
 
             clear_console_line(char_limit=char_limit)
-            pr_str = str(get_dt() + '[' + color(s='RETRYING', c='Y') + ']' + str(max_retry_i)) + ' / ' + str(max_retry)
+            pr_str = str(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i)) + ' / ' + str(max_retry)
             pr_technical_data(pr_str)
             char_limit = int(len(pr_str))
 
@@ -865,7 +865,6 @@ def download_handler(search_q, f_dir, lookup_ids):
 
     if i_skipped > 0:
         print(get_dt() + '[SKIPPED] Books already registered in book_id: ' + str(i_skipped))
-        print('')
 
 
 def summary():
@@ -955,8 +954,9 @@ print('')
 print('_' * 88)
 print('')
 if '--download-mode' in sys.argv and not '-u' in sys.argv:
-    print('[LIBRARY GENESIS EXE]')
-    print('[MODE] Download')
+    print(' [LIBRARY GENESIS EXE]')
+    print('')
+    print(' [MODE] Download')
     i = 0
     run_function = 0
     for _ in sys.argv:
@@ -1066,7 +1066,7 @@ elif '--research-mode' in sys.argv:
 
 # download by keyword
 if run_function == 0:
-    clear_console()
+    # clear_console()
     book_id_check(book_id='', check_type='read-file')
     dl_id_check(book_id='', check_type='read-file')
     search_q = search_q.strip()
