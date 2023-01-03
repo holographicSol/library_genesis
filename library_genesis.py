@@ -57,15 +57,9 @@ def ensure_data_paths():
         open(f_book_id, 'w').close()
 
 
-ensure_data_paths()
-
-
 def ensure_research_paths():
     if not os.path.exists('./research'):
         os.mkdir('./research')
-
-
-ensure_research_paths()
 
 
 def ensure_tmp_paths():
@@ -73,24 +67,45 @@ def ensure_tmp_paths():
         os.mkdir('./tmp')
 
 
-ensure_tmp_paths()
-
-
 def ensure_library_path():
     if not os.path.exists(d_library_genesis):
         os.mkdir(d_library_genesis)
 
 
+# initialize paths
+ensure_data_paths()
+ensure_research_paths()
+ensure_tmp_paths()
 ensure_library_path()
 
+# initiate subprocess argument
 info = subprocess.STARTUPINFO()
 info.dwFlags = 1
 info.wShowWindow = 0
 
+# configure socket timeout
 socket.setdefaulttimeout(15)
 
+# initialize colorama
 colorama.init()
 
+# set default backoff time in module
+retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 10
+
+# set pyprogress factor in module
+multiplier = pyprogress.multiplier_from_inverse_factor(factor=50)
+
+# set user agent
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/'
+                  '73.0.3683.103 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/'
+              'signed-exchange;v=b3',
+    'Accept-Encoding': 'text/plain',
+    'Accept-Language': 'en-US,en;q=0.9'
+    }
+
+# set and initiate
 run_function = 1984
 max_retry = 3
 max_retry_i = 0
@@ -103,18 +118,15 @@ pdf_max = 0
 threads = 4
 i_match = 0
 total_books = int()
-
 verbosity = False
 bool_no_cover = False
 start_page = False
-
 book_id_store = []
 no_ext = []
 no_md5 = []
 failed = []
 ids_ = []
 pdf_list = []
-
 cwd = os.getcwd()
 search_q = ''
 dl_method = ''
@@ -122,22 +134,34 @@ search_mode = 'title'
 human_limit_speed = ''
 query = ''
 
-retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 10
-multiplier = pyprogress.multiplier_from_inverse_factor(factor=50)
-
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-    'Accept-Encoding': 'text/plain',
-    'Accept-Language': 'en-US,en;q=0.9'
-    }
-
 
 def get_dt():
     """ create a datetime string """
     dt = datetime.now()
     dt = '[' + str(dt) + '] '
     return dt
+
+
+def clear_console():
+    """ clears console """
+
+    command = 'clear'
+    if os.name in ('nt', 'dos'):
+        command = 'cls'
+    os.system(command)
+
+
+def clear_console_line(char_limit):
+    """ clear n chars from console """
+
+    print(' '*char_limit, end='\r', flush=True)
+
+
+def pr_technical_data(technical_data):
+
+    """ print n chars to console after running clear_console_line """
+
+    print(technical_data, end='\r', flush=True)
 
 
 def check_clear():
@@ -177,6 +201,7 @@ def research_files_enumerate(_path=''):
 
     _pdf_list = []
     _pdf_max = 0
+    print('')
     for dirName, subdirList, fileList in os.walk(_path):
         for fname in fileList:
             if fname.endswith('.pdf'):
@@ -223,13 +248,16 @@ def compile_results(search_str=''):
     """ reads n files and compiles a list of entries """
 
     if os.path.exists('./research/' + str(search_str)):
+        print('')
         new_file = []
         for dirName, subdirList, fileList in os.walk('./research/' + str(search_str)):
             for fname in fileList:
                 fullpath = os.path.join(dirName, fname)
                 with codecs.open(fullpath, 'r') as fo:
                     for line in fo:
-                        pyprogress.display_progress_unknown(str_progress='[COMPILING RESULTS] ', progress_list=pyprogress.arrow_a, color='CYAN')
+                        pyprogress.display_progress_unknown(str_progress='[COMPILING RESULTS] ',
+                                                            progress_list=pyprogress.arrow_a,
+                                                            color='CYAN')
                         line = line.strip()
                         if line not in new_file:
                             new_file.append(line)
@@ -245,7 +273,9 @@ def compiled_results_to_file(search_str='', results=[]):
     open('./research/' + str(search_str) + '.txt', 'w').close()
     for _ in results:
         with codecs.open('./research/' + str(search_str) + '.txt', 'a', encoding='utf8') as fo:
-            pyprogress.display_progress_unknown(str_progress='[WRITING] ', progress_list=pyprogress.arrow_a, color='CYAN')
+            pyprogress.display_progress_unknown(str_progress='[WRITING] ',
+                                                progress_list=pyprogress.arrow_a,
+                                                color='CYAN')
             fo.write(str(_) + '\n')
         fo.close()
     print('')
@@ -295,7 +325,10 @@ def GetTime(_sec):
 
 def research_progress(i_chunk=int, _commands=[], len_pdf_list=int, _chunk_pdf_list=int, elapsed_time=str):
     # todo: possibly add more detail to progress monitor.
-    print('[PROGRESS] [chunk: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)) + '] [total time taken: ' + str(elapsed_time) + ']', end='\r', flush=True)
+    print('[PROGRESS] [chunk: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)) +
+          '] [total time taken: ' + str(elapsed_time) + ']',
+          end='\r',
+          flush=True)
 
 
 def search_library(_path='', search_str='', _threads=2):
@@ -310,11 +343,20 @@ def search_library(_path='', search_str='', _threads=2):
     t0 = time.time()
     i_chunk = 0
     for _chunk_pdf_lists in _chunk_pdf_list:
-        _commands = iter_chunk_commands(chunk_pdf_lists=_chunk_pdf_lists, search_str=_search_str)
-        research_progress(i_chunk=i_chunk, _commands=_commands, len_pdf_list=len_pdf_list, _chunk_pdf_list=_chunk_pdf_list, elapsed_time=str(GetTime(time.time() - t0)))
+        _commands = iter_chunk_commands(chunk_pdf_lists=_chunk_pdf_lists,
+                                        search_str=_search_str)
+        research_progress(i_chunk=i_chunk,
+                          _commands=_commands,
+                          len_pdf_list=len_pdf_list,
+                          _chunk_pdf_list=_chunk_pdf_list,
+                          elapsed_time=str(GetTime(time.time() - t0)))
         multiplex_commands(commands=_commands)
         i_chunk += 1
-        research_progress(i_chunk=i_chunk, _commands=_commands, len_pdf_list=len_pdf_list, _chunk_pdf_list=_chunk_pdf_list, elapsed_time=str(GetTime(time.time() - t0)))
+        research_progress(i_chunk=i_chunk,
+                          _commands=_commands,
+                          len_pdf_list=len_pdf_list,
+                          _chunk_pdf_list=_chunk_pdf_list,
+                          elapsed_time=str(GetTime(time.time() - t0)))
     print('\n')
     _results = compile_results(search_str=_search_str)
     compiled_results_to_file(search_str=_search_str, results=_results)
@@ -414,28 +456,6 @@ def rem_dl_id(book_id):
     fo.close()
 
 
-def clear_console():
-    """ clears console """
-
-    command = 'clear'
-    if os.name in ('nt', 'dos'):
-        command = 'cls'
-    os.system(command)
-
-
-def clear_console_line(char_limit):
-    """ clear n chars from console """
-
-    print(' '*char_limit, end='\r', flush=True)
-
-
-def pr_technical_data(technical_data):
-
-    """ print n chars to console after running clear_console_line """
-
-    print(technical_data, end='\r', flush=True)
-
-
 def NFD(text):
     return unicodedata.normalize('NFD', text)
 
@@ -457,8 +477,10 @@ def enumerate_ids():
     """ Used to measure multiple instances/types of progress during download """
 
     global page_max, search_q, total_books
-    print('_' * 86)
+    print('_' * 88)
+    print('')
     print(get_dt() + '[ENUMERATION]')
+    print('')
     i_page = 1
     add_page = True
     ids_n = []
@@ -467,8 +489,8 @@ def enumerate_ids():
         library_ = Library()
         try:
             ids = library_.search(query=search_q, mode=search_mode, page=i_page, per_page=100)
-            print(get_dt() + '[PAGE] ' + str(i_page))
-            print(get_dt() + '[BOOK IDs] ' + str(ids))
+            print(get_dt() + '[SEARCHING] [PAGE] [' + str(i_page-1) + ']', end='\r', flush=True)
+            # print(get_dt() + '[BOOK IDs] ' + str(ids))
             for _ in ids:
                 if _ not in ids_:
                     ids_n.append(_)
@@ -480,12 +502,13 @@ def enumerate_ids():
         else:
             page_max += 1
             i_page += 1
-    print('_' * 86)
+    print('_' * 88)
+    print('')
     print(get_dt() + '[ENUMERATION SUMMARY]')
     print(get_dt() + '[KEYWORD] ' + str(search_q))
     print(get_dt() + '[BOOKS] ' + str(len(ids_n)))
+    print(get_dt() + '[PAGES] ' + str(i_page-1))
     total_books = str(len(ids_n))
-    print('_' * 86)
 
 
 def compile_ids(search_q, i_page):
@@ -493,7 +516,8 @@ def compile_ids(search_q, i_page):
 
     global ids_
 
-    print('_' * 86)
+    print('_' * 88)
+    print('')
     print(get_dt() + '[COMPILE IDS]')
     ids_ = []
     f_dir = d_library_genesis + '/' + search_q + '/'
@@ -511,10 +535,9 @@ def compile_ids(search_q, i_page):
     lookup_ids = library_.lookup(ids_)
     print(get_dt() + '[PAGE] ' + str(i_page))
     print(get_dt() + '[BOOKS] ' + str(len(ids_)))
-    print('_' * 86)
 
     if ids_:
-        print('ids_', ids_)
+        # print('ids_', ids_)
         ensure_library_path()
         if not os.path.exists(f_dir):
             os.mkdir(f_dir)
@@ -558,11 +581,11 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                 try:
                     pyprogress.progress_bar(part=int(dl_sz), whole=int(filesize),
                                             pre_append=pre_append,
-                                            append=str(' ' + str(convert_bytes(int(dl_sz))) + ' / ' + str_filesize),
+                                            append=str(''),
                                             encapsulate_l='|',
                                             encapsulate_r='|',
-                                            encapsulate_l_color='LIGHTCYAN_EX',
-                                            encapsulate_r_color='LIGHTCYAN_EX',
+                                            encapsulate_l_color='LIGHTWHITE_EX',
+                                            encapsulate_r_color='LIGHTWHITE_EX',
                                             progress_char=' ',
                                             bg_color='GREEN',
                                             factor=50,
@@ -579,7 +602,8 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
             print(e)
             time.sleep(3)
             clear_console_line(char_limit=char_limit)
-            pr_str = str(get_dt() + '[' + colorama.Style.BRIGHT + colorama.Fore.RED + 'ERROR' + colorama.Style.RESET_ALL + ']')
+            pr_str = str(get_dt() + '[' + colorama.Style.BRIGHT +
+                         colorama.Fore.RED + 'ERROR' + colorama.Style.RESET_ALL + ']')
             pr_technical_data(pr_str)
             char_limit = int(len(pr_str))
 
@@ -593,7 +617,8 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
         total_dl_success += 1
         pr_technical_data('')
         print('\n')
-        print(str(get_dt() + '[' + colorama.Style.BRIGHT + colorama.Fore.GREEN + 'DOWNLOADED SUCCESSFULLY' + colorama.Style.RESET_ALL + ']'))
+        print(str(get_dt() + '[' + colorama.Style.BRIGHT +
+                  colorama.Fore.GREEN + 'DOWNLOADED SUCCESSFULLY' + colorama.Style.RESET_ALL + ']'))
 
         rem_dl_id(book_id=book_id)
 
@@ -602,7 +627,8 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
     else:
         clear_console_line(char_limit=char_limit)
-        pr_str = str(get_dt() + '[' + colorama.Style.BRIGHT + colorama.Fore.RED + 'DOWNLOADED FAILED' + colorama.Style.RESET_ALL + ']')
+        pr_str = str(get_dt() + '[' + colorama.Style.BRIGHT +
+                     colorama.Fore.RED + 'DOWNLOADED FAILED' + colorama.Style.RESET_ALL + ']')
         pr_technical_data(pr_str)
         char_limit = int(len(pr_str))
 
@@ -641,12 +667,22 @@ def enumerate_book(search_q, f_dir, lookup_ids):
             i_progress += 1
             total_i += 1
             max_retry_i = 0
-            print('_' * 86)
+            print('_' * 88)
+            print('')
             if dl_method == 'keyword':
-                print(get_dt() + '[KEYWORD] ' + str(search_q))
-                print(get_dt() + '[PAGE] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_page) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(page_max) + colorama.Style.RESET_ALL)
-                print(get_dt() + '[PROGRESS] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_progress) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(len(ids_)) + colorama.Style.RESET_ALL + ' (' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(total_books) + colorama.Style.RESET_ALL + ')')
+                print(get_dt() + '[PAGE] ' + colorama.Style.BRIGHT +
+                      colorama.Fore.LIGHTCYAN_EX + str(i_page) + colorama.Style.RESET_ALL +
+                      ' / ' + colorama.Style.BRIGHT +
+                      colorama.Fore.LIGHTCYAN_EX + str(page_max) + colorama.Style.RESET_ALL)
 
+                print(get_dt() + '[PROGRESS] ' + colorama.Style.BRIGHT +
+                      colorama.Fore.LIGHTCYAN_EX + str(i_progress) + colorama.Style.RESET_ALL +
+                      ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(len(ids_)) +
+                      colorama.Style.RESET_ALL + ' (' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX +
+                      str(total_books) + colorama.Style.RESET_ALL + ')')
+                print(get_dt() + '[KEYWORD] ' + str(search_q))
+
+            # uncomment to display entire dictionary
             # print(_.__dict__)
 
             book_id = _.id
@@ -654,25 +690,27 @@ def enumerate_book(search_q, f_dir, lookup_ids):
 
             bool_dl_id_check = dl_id_check(book_id=book_id)
             bool_book_id_check = book_id_check(book_id=book_id, check_type='memory')
-            print(get_dt() + '[CHECK DL_ID] ' + str(bool_dl_id_check))
-            print(get_dt() + '[CHECK BOOK_ID] ' + str(bool_book_id_check))
+            # print(get_dt() + '[CHECK DL_ID] ' + str(bool_dl_id_check))
+            # print(get_dt() + '[CHECK BOOK_ID] ' + str(bool_book_id_check))
+
+            title = _.title.strip()
+            if title == '':
+                title = 'unknown_title'
+            print(get_dt() + '[TITLE] ' + colorama.Style.BRIGHT + colorama.Fore.CYAN + str(title) +
+                  colorama.Style.RESET_ALL)
+
+            author = _.author.strip()
+            if author == '':
+                author = 'unknown_author'
+            print(get_dt() + '[AUTHOR] ' + colorama.Style.BRIGHT + colorama.Fore.CYAN + str(author) +
+                  colorama.Style.RESET_ALL)
+
+            year = _.year.strip()
+            if year == '0' or not year:
+                year = 'unknown_year'
+            print(get_dt() + '[YEAR] ' + str(year))
 
             if bool_book_id_check is False or bool_dl_id_check is True:
-
-                title = _.title.strip()
-                if title == '':
-                    title = 'unknown_title'
-                print(get_dt() + '[TITLE] ' + colorama.Style.BRIGHT + colorama.Fore.CYAN + str(title) + colorama.Style.RESET_ALL)
-
-                author = _.author.strip()
-                if author == '':
-                    author = 'unknown_author'
-                print(get_dt() + '[AUTHOR] ' + colorama.Style.BRIGHT + colorama.Fore.CYAN + str(author) + colorama.Style.RESET_ALL)
-
-                year = _.year.strip()
-                if year == '0' or not year:
-                    year = 'unknown_year'
-                print(get_dt() + '[YEAR] ' + str(year))
 
                 filesize = _.filesize.strip()
                 print(get_dt() + '[FILE SIZE] ' + str(convert_bytes(int(filesize))))
@@ -680,10 +718,10 @@ def enumerate_book(search_q, f_dir, lookup_ids):
 
                 md5 = _.md5.strip()
                 if md5 == '':
-                    print(get_dt() + '[md5] could not find md5, skipping')
+                    print(get_dt() + '[MD5] could not find md5, skipping.')
                     no_md5.append([title, author, year])
                     break
-                print(get_dt() + '[md5] ' + md5)
+                # print(get_dt() + '[MD5] ' + md5)
 
                 url = ('http://library.lol/main/' + str(md5))
                 rHead = requests.get(url)
@@ -708,7 +746,7 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                         src = (link.get('src'))
                         if src:
                             if src.endswith('.jpg'):
-                                print(get_dt() + '[IMAGE] ' + str(src))
+                                # print(get_dt() + '[IMAGE] ' + str(src))
                                 img_ = 'http://library.lol/' + src
                                 break
 
@@ -723,7 +761,7 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                     if len(save_path) >= 255:
                         save_path = save_path[:259+len(ext)]
                         save_path = save_path + '...)' + ext
-                        print(get_dt() + '[LIMITING FILENAME LENGTH]' + str(save_path))
+                        # print(get_dt() + '[LIMITING FILENAME LENGTH]' + str(save_path))
 
                     # dl book cover
                     if bool_no_cover is False:
@@ -740,13 +778,13 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                                         fo.write(data)
                                 fo.close()
                             except Exception as e:
-                                print(get_dt() + '[SAVING] [COVER] failed')
+                                print(get_dt() + '[SAVING] [COVER] failed.')
                             try:
                                 r.release_conn()
                             except:
                                 pass
-                    else:
-                        print(get_dt() + '[COVER] Skipping cover download.')
+                    # else:
+                    #     print(get_dt() + '[COVER] Skipping cover download.')
 
                     # dl book
                     allow_dl = False
@@ -771,13 +809,13 @@ def enumerate_book(search_q, f_dir, lookup_ids):
 
                     else:
                         """ Block to preserve existing file with the same name that is also not mentioned in dl_id """
-                        print(get_dt() + '[SKIPPING] Blocked to preserve')
+                        print(get_dt() + '[SKIPPING] File already exists and is not in download list.')
 
                 else:
-                    print(get_dt() + '[SKIPPING] URL with compatible file extension could not be found')
+                    print(get_dt() + '[SKIPPING] URL with compatible file extension could not be found.')
 
             elif book_id_check(book_id=book_id, check_type='memory') is True:
-                print(get_dt() + '[SKIPPING] Book is registered in book_id')
+                print(get_dt() + '[SKIPPING] Book is registered in book_id.')
 
         except Exception as e:
             print(get_dt() + str(e))
@@ -786,7 +824,7 @@ def enumerate_book(search_q, f_dir, lookup_ids):
 
 def summary():
     print('')
-    print('_' * 86)
+    print('_' * 88)
     print('')
     print(get_dt() + '[SUMMARY]')
     print('')
@@ -802,13 +840,13 @@ def summary():
     print('')
     print(get_dt() + '[COMPLETE]')
     print('')
-    print('_' * 86)
+    print('_' * 88)
 
 
 # Help menu
 if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
-    print('_' * 86)
+    print('_' * 88)
     print('')
     print(' [LIBRARY GENESIS DOWNLOAD & RESEARCH TOOL]')
     print('')
@@ -869,7 +907,7 @@ search_mode_ = ''
 research_str = ''
 i_page_ = ''
 print('')
-print('_' * 86)
+print('_' * 88)
 print('')
 if '--download-mode' in sys.argv and not '-u' in sys.argv:
     print('[LIBRARY GENESIS EXE]')
