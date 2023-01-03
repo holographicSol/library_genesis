@@ -240,9 +240,9 @@ def iter_chunk_commands(chunk_pdf_lists=[], search_str=''):
     _thread_n = 0
     for _ in chunk_pdf_lists:
         # uncomment for: source code version
-        commands.append(str('python ./research_raw.py "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
+        # commands.append(str('python ./research_raw.py "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
         # uncomment for: compiled version
-        # commands.append(str('./research_raw.exe "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
+        commands.append(str('./research_raw.exe "' + str(_) + '" ' + str(_thread_n) + ' ' + str(search_str)))
         _thread_n += 1
     return commands
 
@@ -501,7 +501,7 @@ def enumerate_ids():
             i_page += 1
     # print('')
     # print('_' * 88)
-    # print('')
+    print('')
     print(get_dt() + '[KEYWORD] ' + str(search_q))
     print(get_dt() + '[BOOKS] ' + str(len(ids_n)))
     print(get_dt() + '[PAGES] ' + str(i_page-1))
