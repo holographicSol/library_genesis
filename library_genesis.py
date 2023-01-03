@@ -26,25 +26,22 @@ Written by Benjamin Jack Cullen aka Holographic_Sol
             id from dl_id.txt manually) then restart the download operation.
 
 """
-import webbrowser
-from datetime import datetime, timedelta
 import os
 import sys
 import time
+from datetime import datetime, timedelta
 import codecs
-import signal
-from pylibgen import Library
-import requests
-from bs4 import BeautifulSoup
+import socket
 import urllib3
+import colorama
+import requests
+import subprocess
+import webbrowser
 import unicodedata
+from pylibgen import Library
+from bs4 import BeautifulSoup
 import sol_ext
 import pyprogress
-import colorama
-import pdfplumber
-import socket
-import subprocess
-import research
 
 f_dl_id = './data/dl_id.txt'
 f_book_id = './data/book_id.txt'
@@ -89,7 +86,6 @@ ensure_library_path()
 info = subprocess.STARTUPINFO()
 info.dwFlags = 1
 info.wShowWindow = 0
-main_pid = int()
 
 socket.setdefaulttimeout(15)
 
@@ -98,35 +94,33 @@ colorama.init()
 run_function = 1984
 max_retry = 3
 max_retry_i = 0
-total_books = int()
 total_dl_success = 0
-update_max = 0
 i_page = 1
 page_max = 0
 total_i = 0
 limit_speed = 0
-human_limit_speed = ''
-
 pdf_max = 0
-pdf_list = []
 threads = 4
 i_match = 0
-query = ''
+total_books = int()
+
 verbosity = False
 bool_no_cover = False
+start_page = False
 
 book_id_store = []
 no_ext = []
 no_md5 = []
 failed = []
 ids_ = []
+pdf_list = []
 
 cwd = os.getcwd()
 search_q = ''
 dl_method = ''
 search_mode = 'title'
-
-start_page = False
+human_limit_speed = ''
+query = ''
 
 retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 10
 multiplier = pyprogress.multiplier_from_inverse_factor(factor=50)
@@ -178,19 +172,6 @@ def display_progress_unknown(str_progress='', progress_list=[], str_pre_append='
         i_char_progress += 1
 
 
-def files_enumerate(path=''):
-    global pdf_max
-    global pdf_list
-
-    for dirName, subdirList, fileList in os.walk(path):
-        for fname in fileList:
-            if fname.endswith('.pdf'):
-                pdf_max += 1
-                pdf_list.append(os.path.join(dirName, fname))
-                print('[ENUMERATING] Files: ' + str(pdf_max), end='\r', flush=True)
-    print('\n')
-
-
 def research_files_enumerate(_path=''):
     """ return a list of files """
 
@@ -231,9 +212,11 @@ def iter_chunk_commands(chunk_pdf_lists=[], search_str=''):
 
 def multiplex_commands(commands=[]):
     """ executes n commands as subprocesses and waits until all have completed """
-    procs = [subprocess.Popen(i) for i in commands]
-    for p in procs:
-        p.wait()
+
+    if os.path.exists('./research_raw.exe') or os.path.exists('./research_raw.py'):
+        procs = [subprocess.Popen(i_command) for i_command in commands]
+        for p in procs:
+            p.wait()
 
 
 def compile_results(search_str=''):
@@ -270,6 +253,8 @@ def compiled_results_to_file(search_str='', results=[]):
 
 
 def results_handler(search_str='', re_display_results=True):
+    """ optionally display results and some extra switches """
+
     if os.path.exists('./research/' + str(search_str) + '.txt'):
         if re_display_results is True:
             print('')
@@ -650,23 +635,17 @@ def enumerate_book(search_q, f_dir, lookup_ids):
     """ obtains book details using book id and calls dl function if certain conditions are met """
 
     global ids_, dl_method, max_retry_i, no_md5, no_ext, failed, total_books, total_i, bool_no_cover
-    i = 0
-    i_update = 0
-    save_path = ''
+    i_progress = 0
     for _ in lookup_ids:
         try:
-            i += 1
+            i_progress += 1
             total_i += 1
             max_retry_i = 0
             print('_' * 86)
             if dl_method == 'keyword':
                 print(get_dt() + '[KEYWORD] ' + str(search_q))
                 print(get_dt() + '[PAGE] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_page) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(page_max) + colorama.Style.RESET_ALL)
-                print(get_dt() + '[PROGRESS] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(len(ids_)) + colorama.Style.RESET_ALL + ' (' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(total_books) + colorama.Style.RESET_ALL + ')')
-            elif dl_method == 'update':
-                i_update += 1
-                print(get_dt() + '[UPDATE] ' + str(search_q))
-                print(get_dt() + '[PROGRESS] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_update) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(update_max) + colorama.Style.RESET_ALL)
+                print(get_dt() + '[PROGRESS] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_progress) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(len(ids_)) + colorama.Style.RESET_ALL + ' (' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(total_books) + colorama.Style.RESET_ALL + ')')
 
             # print(_.__dict__)
 
@@ -720,7 +699,6 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                         if not _ == '.html':
                             if str(noCase(_ext_).strip()) == '.' + str(_).strip().lower():
                                 ext = '.' + str(_.lower())
-                                # print(get_dt() + '[URL] ' + str(href))
                                 break
                     break
 
@@ -751,7 +729,6 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                     if bool_no_cover is False:
                         if not os.path.exists(save_path_img):
                             try:
-                                # print(get_dt() + '[SAVING] [COVER] ' + str(save_path_img))  # uncomment to display path
                                 print(get_dt() + '[SAVING] [COVER]')
                                 http = urllib3.PoolManager(retries=retries)
                                 r = http.request('GET', img_, preload_content=False, headers=headers)
@@ -775,13 +752,11 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                     allow_dl = False
                     if bool_dl_id_check is False and not os.path.exists(str(save_path)):
                         """ Book ID not in book_id.txt and not in dl_id.txt and save path does not exist """
-                        # print(get_dt() + '[SAVING] [NEW] ' + str(save_path))  # uncomment to display path
                         print(get_dt() + '[SAVING] [NEW]')
                         allow_dl = True
 
                     elif bool_dl_id_check is True:
                         """ Book ID in dl_id.txt (overwrite an existing file if save path exists already) """
-                        # print(get_dt() + '[SAVING] [RETRYING] ' + str(save_path))  # uncomment to display path
                         print(get_dt() + '[SAVING] [RETRYING]')
                         allow_dl = True
 
@@ -852,9 +827,6 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('   [-k]              [Specify keyword(s). Must be the last argument]')
     print('                     [Anything after -k will be treated as keyword(s)]')
     print('   [-p]              [Page. Specify start page number. Default is 0]')
-    # print('   [-u]              [Update. Update an existing library genesis directory]')  # todo: update
-    # print('                     [Each directory name in an existing ./library_genesis directory will')
-    # print('                      be used as a search term during update process. (EXPERIMENTAL)]')
     print('   [--download-mode] [Instructs program to run in download mode]')
     print('   [--retry-max]     [Max retries for an incomplete download]')
     print('                     [Can be set to unlimited to keep trying]')
@@ -886,7 +858,6 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('   --download-mode -k robots')
     print('   --download-mode -p 3 -k robots')
     print('   --download-mode --throttle 1024 --retry-max unlimited --search-mode title -k robots')
-    # print('  --download-mode -u')
     print("   --research-mode -d './library_genesis' --research robots")
     print("   --research-mode -t 16 -d './library_genesis' --research robots")
     print('')
@@ -973,17 +944,6 @@ if '--download-mode' in sys.argv and not '-u' in sys.argv:
 
         i += 1
 
-# todo: update before final integration
-# elif '-u' in sys.argv and '--download-mode' in sys.argv:
-#     print('[LIBRARY GENESIS EXE]')
-#     print('[MODE] Update')
-#     # update
-#     if len(sys.argv) == 3:
-#         run_function = 1
-#     else:
-#         print(get_dt() + '[failed] update switch takes no other arguments.')
-#         run_function = 1984
-
 elif '--research-mode' in sys.argv:
     print('[LIBRARY GENESIS EXE]')
     print('[MODE] Research')
@@ -1033,29 +993,6 @@ if run_function == 0:
             compile_ids(search_q, i_page)
             i_page += 1
     summary()
-
-# todo --> update before final integration
-# # download in update mode
-# elif run_function == 1:
-#     clear_console()
-#     book_id_check(book_id='', check_type='read-file')
-#     print(get_dt() + '[Update Library]')
-#     update_max = 0
-#     search_q = []
-#     for dirname, dirnames, filenames in os.walk(d_library_genesis):
-#         for subdirname in dirnames:
-#             fullpath = os.path.join(subdirname)
-#             search_q.append(fullpath)
-#             print('    [update] ' + str(fullpath))
-#             update_max += 1
-#     i_query = 0
-#     dl_method = 'update'
-#     for _ in search_q:
-#         i_page = 1
-#         print(get_dt() + '[updating] ' + str(_))
-#         compile_ids(search_q[i_query], i_page)
-#         i_query += 1
-#     summary()
 
 # research
 elif run_function == 2:
