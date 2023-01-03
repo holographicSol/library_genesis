@@ -142,6 +142,8 @@ def color(s=str, c=str):
         return colorama.Style.BRIGHT + colorama.Fore.GREEN + str(s) + colorama.Style.RESET_ALL
     elif c == 'R':
         return colorama.Style.BRIGHT + colorama.Fore.RED + str(s) + colorama.Style.RESET_ALL
+    elif c == 'Y':
+        return colorama.Style.BRIGHT + colorama.Fore.YELLOW + str(s) + colorama.Style.RESET_ALL
 
 
 def get_dt():
@@ -388,9 +390,9 @@ def book_id_check(book_id, check_type):
         with open(f_book_id, 'r') as fo:
             for line in fo:
                 line = line.strip()
-                if line == str(book_id):
-                    bool_book_id_check = True
-                    break
+                # if line == str(book_id):
+                #     bool_book_id_check = True
+                    # break
                 book_id_store.append(line)
         fo.close()
     elif check_type == 'memory':
@@ -407,7 +409,8 @@ def add_book_id(book_id):
     with open(f_book_id, 'a') as fo:
         fo.write(str(book_id) + '\n')
     fo.close()
-    book_id_store.append(book_id)
+    if book_id not in book_id_store:
+        book_id_store.append(book_id)
 
 
 def dl_id_check(book_id=str, check_type=str):
@@ -421,9 +424,9 @@ def dl_id_check(book_id=str, check_type=str):
             with codecs.open(f_dl_id, 'r', encoding='utf8') as fo:
                 for line in fo:
                     line = line.strip()
-                    if line == str(book_id):
-                        bool_dl_id_check = True
-                        break
+                    # if line == str(book_id):
+                    #     bool_dl_id_check = True
+                        # break
                     if line not in dl_id_store:
                         dl_id_store.append(line)
         else:
@@ -629,7 +632,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
             if max_retry_i < max_retry:
 
                 clear_console_line(char_limit=char_limit)
-                pr_str = str(get_dt() + '[RETRYING] ' + str(max_retry_i)) + ' / ' + str(max_retry)
+                pr_str = str(get_dt() + '[' + color(s='RETRYING', c='Y') + ']' + str(max_retry_i)) + ' / ' + str(max_retry)
                 pr_technical_data(pr_str)
                 char_limit = int(len(pr_str))
 
@@ -639,7 +642,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
         elif str(max_retry) == 'unlimited':
 
             clear_console_line(char_limit=char_limit)
-            pr_str = str(get_dt() + '[RETRYING] ' + str(max_retry_i)) + ' / ' + str(max_retry)
+            pr_str = str(get_dt() + '[' + color(s='RETRYING', c='Y') + ']' + str(max_retry_i)) + ' / ' + str(max_retry)
             pr_technical_data(pr_str)
             char_limit = int(len(pr_str))
 
@@ -650,7 +653,6 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 def get_book_details(id=str):
     """ use book ID to return book details """
 
-    book_id = id.id
     title = id.title.strip()
     author = id.author.strip()
     year = id.year.strip()
@@ -662,7 +664,7 @@ def get_book_details(id=str):
         author = 'unknown_author'
     if year == '0' or not year:
         year = 'unknown_year'
-    return book_id, title, author, year, md5, filesize
+    return title, author, year, md5, filesize
 
 
 def get_soup(_md5=str):
@@ -698,13 +700,12 @@ def get_cover_href(_soup=[]):
 
     global bool_no_cover
     img_ = ''
-    if bool_no_cover is False:
-        for link in _soup.find_all('img'):
-            src = (link.get('src'))
-            if src:
-                if src.endswith('.jpg'):
-                    img_ = 'http://library.lol/' + src
-                    break
+    for link in _soup.find_all('img'):
+        src = (link.get('src'))
+        if src:
+            if src.endswith('.jpg'):
+                img_ = 'http://library.lol/' + src
+                break
     return img_
 
 
@@ -770,34 +771,41 @@ def download_handler(search_q, f_dir, lookup_ids):
 
     global ids_, max_retry_i, no_md5, no_ext, failed, total_books, total_i, bool_no_cover
     i_progress = 0
+    i_skipped = 0
     for _ in lookup_ids:
         try:
             i_progress += 1
             total_i += 1
             max_retry_i = 0
-            print('_' * 88)
-            print('')
 
-            # uncomment to display entire dictionary
-            # print(_.__dict__)
+            book_id = _.id
 
-            book_id, title, author, year, md5, filesize = get_book_details(id=_)
-
-            display_book_details(_i_page=i_page, _page_max=page_max, _i_progress=i_progress, _ids_=ids_,
-                                 _total_books=total_books, _search_q=search_q, _book_id=book_id, _title=title,
-                                 _author=author, _year=year, _filesize=filesize)
-
-            str_filesize = str(convert_bytes(int(filesize)))
-
-            if md5 == '':
-                print(get_dt() + '[MD5] could not find md5, skipping.')
-                no_md5.append([title, author, year])
-                break
-
-            bool_dl_id_check = dl_id_check(book_id=book_id, check_type='memory')
             bool_book_id_check = book_id_check(book_id=book_id, check_type='memory')
+            if bool_book_id_check is False:
 
-            if bool_book_id_check is False or bool_dl_id_check is True:
+                print('_' * 88)
+                print('')
+
+                # uncomment to display entire dictionary
+                # print(_.__dict__)
+
+                title, author, year, md5, filesize = get_book_details(id=_)
+
+                display_book_details(_i_page=i_page, _page_max=page_max, _i_progress=i_progress, _ids_=ids_,
+                                     _total_books=total_books, _search_q=search_q, _book_id=book_id, _title=title,
+                                     _author=author, _year=year, _filesize=filesize)
+
+                str_filesize = str(convert_bytes(int(filesize)))
+
+                if md5 == '':
+                    print(get_dt() + '[MD5] could not find md5, skipping.')
+                    no_md5.append([title, author, year])
+                    break
+
+                bool_dl_id_check = dl_id_check(book_id=book_id, check_type='memory')
+                # bool_book_id_check = book_id_check(book_id=book_id, check_type='memory')
+
+                # if bool_dl_id_check is True:
 
                 _soup = get_soup(_md5=md5)
                 href, ext = get_extension(_soup=_soup)
@@ -846,13 +854,18 @@ def download_handler(search_q, f_dir, lookup_ids):
                 else:
                     print(get_dt() + '[SKIPPING] URL with compatible file extension could not be found.')
 
-            elif book_id_check(book_id=book_id, check_type='memory') is True:
-                print(get_dt() + '[SKIPPING] Book is registered in book_id.')
+            elif bool_book_id_check is True:
+                print(get_dt() + '[SKIPPING] Book is registered in book_id: ' + str(book_id), end='\r', flush=True)
+                i_skipped += 1
 
         except Exception as e:
             # todo: expand handling
             print(get_dt() + str(e))
             download_handler(search_q, f_dir, lookup_ids)
+
+    if i_skipped > 0:
+        print(get_dt() + '[SKIPPED] Books already registered in book_id: ' + str(i_skipped))
+        print('')
 
 
 def summary():
