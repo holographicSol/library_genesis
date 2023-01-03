@@ -167,10 +167,6 @@ def check_clear():
                             pass
 
 
-def iter_items(_pythonic_list, i):
-    return _pythonic_list[i]
-
-
 def display_progress_unknown(str_progress='', progress_list=[], str_pre_append='', str_append=''):
     """ A simple function to display progress when overall progress is unknown. Useful when a 'whole' is unknown. """
 
@@ -281,13 +277,13 @@ def results_handler(search_str='', re_display_results=True):
             print('')
         option_file = []
         with open('./research/' + str(search_str) + '.txt', 'r') as fo:
-            i = 0
+            i_results = 0
             for line in fo:
                 line = line.strip()
                 if re_display_results is True:
-                    print(' [' + str(i) + '] ' + line)
+                    print(' [' + str(i_results) + '] ' + line)
                 option_file.append(line)
-                i += 1
+                i_results += 1
         fo.close()
         if re_display_results is True:
             print(' [Q] Quit')
@@ -300,7 +296,7 @@ def results_handler(search_str='', re_display_results=True):
         elif user_option.isdigit():
             user_option = int(user_option)
             if user_option < len(option_file):
-                # todo: webbrowser may not always open pdf. explore options
+                # todo: webbrowser may not always open pdf. explore options.
                 webbrowser.open(option_file[user_option], 2)
         if user_option != noCase('q'):
             results_handler(search_str=search_str, re_display_results=False)
@@ -313,8 +309,7 @@ def GetTime(_sec):
 
 
 def research_progress(i_chunk=int, _commands=[], len_pdf_list=int, _chunk_pdf_list=int, elapsed_time=str):
-    # todo: fix percent and parts to display correctly and ensure the whole line is cleared before printing.
-
+    # todo: possibly add more detail to progress monitor.
     print('[PROGRESS] [chunk: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)) + '] [total time taken: ' + str(elapsed_time) + ']', end='\r', flush=True)
 
 
@@ -324,31 +319,20 @@ def search_library(_path='', search_str='', _threads=2):
     _path = _path
     _search_str = search_str
     _threads = _threads
-
     _pdf_list = research_files_enumerate(_path=_path)
     len_pdf_list = int(len(_pdf_list))
     _chunk_pdf_list = chunks(_pdf_list=_pdf_list, chunk_count=_threads)
-
     t0 = time.time()
     i_chunk = 0
     for _chunk_pdf_lists in _chunk_pdf_list:
-
         _commands = iter_chunk_commands(chunk_pdf_lists=_chunk_pdf_lists, search_str=_search_str)
-
         research_progress(i_chunk=i_chunk, _commands=_commands, len_pdf_list=len_pdf_list, _chunk_pdf_list=_chunk_pdf_list, elapsed_time=str(GetTime(time.time() - t0)))
-
         multiplex_commands(commands=_commands)
         i_chunk += 1
-
         research_progress(i_chunk=i_chunk, _commands=_commands, len_pdf_list=len_pdf_list, _chunk_pdf_list=_chunk_pdf_list, elapsed_time=str(GetTime(time.time() - t0)))
-
     print('\n')
-
     _results = compile_results(search_str=_search_str)
-
     compiled_results_to_file(search_str=_search_str, results=_results)
-
-    # todo: finnish results handler functionality.
     print('')
     if len(_results) > 0:
         if len(_results) <= 100:
@@ -370,7 +354,6 @@ def book_id_check(book_id, check_type):
 
     global book_id_store
     ensure_data_paths()
-
     bool_book_id_check = False
     if check_type == 'read-file':
         with open(f_book_id, 'r') as fo:
@@ -381,7 +364,6 @@ def book_id_check(book_id, check_type):
                     break
                 book_id_store.append(line)
         fo.close()
-
     elif check_type == 'memory':
         if book_id in book_id_store:
             bool_book_id_check = True
@@ -393,7 +375,6 @@ def add_book_id(book_id):
 
     global book_id_store
     ensure_data_paths()
-
     with open(f_book_id, 'a') as fo:
         fo.write(str(book_id) + '\n')
     fo.close()
@@ -491,7 +472,7 @@ def enumerate_ids():
     """ Used to measure multiple instances/types of progress during download """
 
     global page_max, search_q, total_books
-    print('-' * 100)
+    print('_' * 86)
     print(get_dt() + '[ENUMERATION]')
     i_page = 1
     add_page = True
@@ -514,12 +495,12 @@ def enumerate_ids():
         else:
             page_max += 1
             i_page += 1
-    print('-' * 100)
+    print('_' * 86)
     print(get_dt() + '[ENUMERATION SUMMARY]')
     print(get_dt() + '[KEYWORD] ' + str(search_q))
     print(get_dt() + '[BOOKS] ' + str(len(ids_n)))
     total_books = str(len(ids_n))
-    print('-' * 100)
+    print('_' * 86)
 
 
 def compile_ids(search_q, i_page):
@@ -527,7 +508,7 @@ def compile_ids(search_q, i_page):
 
     global ids_
 
-    print('-' * 100)
+    print('_' * 86)
     print(get_dt() + '[COMPILE IDS]')
     ids_ = []
     f_dir = d_library_genesis + '/' + search_q + '/'
@@ -545,7 +526,7 @@ def compile_ids(search_q, i_page):
     lookup_ids = library_.lookup(ids_)
     print(get_dt() + '[PAGE] ' + str(i_page))
     print(get_dt() + '[BOOKS] ' + str(len(ids_)))
-    print('-' * 100)
+    print('_' * 86)
 
     if ids_:
         print('ids_', ids_)
@@ -677,7 +658,7 @@ def enumerate_book(search_q, f_dir, lookup_ids):
             i += 1
             total_i += 1
             max_retry_i = 0
-            print('-' * 100)
+            print('_' * 86)
             if dl_method == 'keyword':
                 print(get_dt() + '[KEYWORD] ' + str(search_q))
                 print(get_dt() + '[PAGE] ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(i_page) + colorama.Style.RESET_ALL + ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(page_max) + colorama.Style.RESET_ALL)
@@ -830,7 +811,7 @@ def enumerate_book(search_q, f_dir, lookup_ids):
 
 def summary():
     print('')
-    print('-' * 100)
+    print('_' * 86)
     print('')
     print(get_dt() + '[SUMMARY]')
     print('')
@@ -846,13 +827,13 @@ def summary():
     print('')
     print(get_dt() + '[COMPLETE]')
     print('')
-    print('-' * 100)
+    print('_' * 86)
 
 
 # Help menu
 if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
-    print('-'*104)
+    print('_' * 86)
     print('')
     print(' [LIBRARY GENESIS DOWNLOAD & RESEARCH TOOL]')
     print('')
@@ -861,7 +842,6 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print('               [In the name of intelligence]')
     print('               [Downloads and researches a digital library]')
-    print('               [Intended as an intelligence tool for archiving information in an uncertain world]')
     print('')
     print('               [AUTHOR] [Benjamin Jack Cullen]')
     print('')
@@ -869,45 +849,46 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print(' [DOWNLOAD]')
     print('')
     print('   [-h]              [Displays this help message]')
-    print('   [-k]              [Keyword. Specify keyword(s). Should always be the last argument]')
-    print('                     [Anything after -k will be treated as a keyword(s). (MUST be specified last)]')
+    print('   [-k]              [Specify keyword(s). Must be the last argument]')
+    print('                     [Anything after -k will be treated as keyword(s)]')
     print('   [-p]              [Page. Specify start page number. Default is 0]')
     # print('   [-u]              [Update. Update an existing library genesis directory]')  # todo: update
     # print('                     [Each directory name in an existing ./library_genesis directory will')
     # print('                      be used as a search term during update process. (EXPERIMENTAL)]')
     print('   [--download-mode] [Instructs program to run in download mode]')
-    print('   [--retry-max]     [Max number of retries for an incomplete download]')
-    print('                     [Can be set to unlimited to keep trying if an exception is encountered]')
-    print('                     [Default is 3. Using unlimited is always recommended]')
-    print('                     [If issues are encountered then specify number]')
-    print('   [--search-mode]   [Specify search mode. Default is title if --search-mode is unspecified]')
+    print('   [--retry-max]     [Max retries for an incomplete download]')
+    print('                     [Can be set to unlimited to keep trying]')
+    print('                     [Default is 3]')
+    print('                     [If issues encountered then specify number]')
+    print('   [--search-mode]   [Specify search mode]')
+    print('                      [Default is title if --search-mode is unspecified]')
     print('                     [--search-mode title]')
     print('                     [--search-mode author]')
     print('                     [--search-mode isbn]')
     print('   [--no-cover]      [No Cover. Book covers will not be downloaded.]')
     print('                     [Covers are downloaded by default.]')
-    print('   [--throttle]      [Throttle download speed. Specify bytes per second in digits]')
+    print('   [--throttle]      [Throttle download speed. Specify bytes per second]')
     print('                     [1024 bytes = 1KB. Use a calculator if you need it]')
     print('                     [Example: --throttle 1024]')
     print('                     [Default is 0 (unlimited)]')
     print('')
     print(' [RESEARCH]')
     print('')
-    print('   [--research-mode] [Specify research mode. Instructs program to run in research mode]')
-    print('   [-t]              [Threads. Specify number of files that will be processed simultaneously]')
+    print('   [--research-mode] [Instructs program to run in research mode]')
+    print('   [-t]              [Threads. (N files to be processed simultaneously)]')
     print('                     [Default is 2 if -t is unspecified]')
-    print('   [-d]              [Specify directory to research. Used with --research-mode]')
-    print('   [--research]      [Specify research query. Used with --research-mode]')
+    print('   [-d]              [Specify directory to research]')
+    print('   [--research]      [Specify research query]')
     print('                     [This argument MUST be specified last]')
     print('')
     print(' [EXAMPLES]')
     print('')
-    print('   library_genesis --download-mode -k robots')
-    print('   library_genesis --download-mode -p 3 -k robots')
-    print('   library_genesis --download-mode --throttle 1024 --retry-max unlimited --search-mode title -k robots')
-    # print('    library_genesis --download-mode -u')
-    print("   library_genesis --research-mode -d './library_genesis' --research robots")
-    print("   library_genesis --research-mode -t 8 -d './library_genesis' --research robots")
+    print('   --download-mode -k robots')
+    print('   --download-mode -p 3 -k robots')
+    print('   --download-mode --throttle 1024 --retry-max unlimited --search-mode title -k robots')
+    # print('  --download-mode -u')
+    print("   --research-mode -d './library_genesis' --research robots")
+    print("   --research-mode -t 16 -d './library_genesis' --research robots")
     print('')
     run_function = 1984
 
@@ -917,7 +898,7 @@ search_mode_ = ''
 research_str = ''
 i_page_ = ''
 print('')
-print('-'*100)
+print('_' * 86)
 print('')
 if '--download-mode' in sys.argv and not '-u' in sys.argv:
     print('[LIBRARY GENESIS EXE]')
