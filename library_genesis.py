@@ -499,9 +499,9 @@ def enumerate_ids():
         else:
             page_max += 1
             i_page += 1
-    print('')
-    print('_' * 88)
-    print('')
+    # print('')
+    # print('_' * 88)
+    # print('')
     print(get_dt() + '[KEYWORD] ' + str(search_q))
     print(get_dt() + '[BOOKS] ' + str(len(ids_n)))
     print(get_dt() + '[PAGES] ' + str(i_page-1))
@@ -559,10 +559,10 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
                 if limit_speed == 0:
                     data = r.read(1024)
-                    pre_append = '[DOWNLOADING BOOK] '
+                    pre_append = ' [DOWNLOADING BOOK] '
                 else:
                     data = r.read(limit_speed)
-                    pre_append = '[DOWNLOADING BOOK] [THROTTLING ' + str(human_limit_speed) + '] '
+                    pre_append = ' [DOWNLOADING BOOK] [THROTTLING ' + str(human_limit_speed) + '] '
 
                 if not data:
                     dl_sz += int(len(data))
