@@ -122,6 +122,7 @@ verbosity = False
 bool_no_cover = False
 start_page = False
 book_id_store = []
+dl_id_store = []
 no_ext = []
 no_md5 = []
 failed = []
@@ -129,10 +130,18 @@ ids_ = []
 pdf_list = []
 cwd = os.getcwd()
 search_q = ''
-dl_method = ''
 search_mode = 'title'
 human_limit_speed = ''
 query = ''
+
+
+def color(s=str, c=str):
+    if c == 'LC':
+        return colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(s) + colorama.Style.RESET_ALL
+    elif c == 'G':
+        return colorama.Style.BRIGHT + colorama.Fore.GREEN + str(s) + colorama.Style.RESET_ALL
+    elif c == 'R':
+        return colorama.Style.BRIGHT + colorama.Fore.RED + str(s) + colorama.Style.RESET_ALL
 
 
 def get_dt():
@@ -140,6 +149,12 @@ def get_dt():
     dt = datetime.now()
     dt = '[' + str(dt) + '] '
     return dt
+
+
+def GetTime(_sec):
+    sec = timedelta(seconds=int(_sec))
+    d = datetime(1, 1, 1) + sec
+    return str("%d:%d:%d:%d" % (d.day-1, d.hour, d.minute, d.second))
 
 
 def clear_console():
@@ -158,31 +173,26 @@ def clear_console_line(char_limit):
 
 
 def pr_technical_data(technical_data):
-
     """ print n chars to console after running clear_console_line """
 
     print(technical_data, end='\r', flush=True)
 
 
-def check_clear():
-    global query
-    for dirName, subdirList, fileList in os.walk('./tmp'):
-        for fname in fileList:
-            fullpath = os.path.join(dirName, fname)
-            if fname.endswith('.txt'):
-                f_exists = False
-                if fname.startswith('research_completed_'+query):
-                    f_exists = True
-                elif fname.startswith('research_'+query):
-                    f_exists = True
-                elif fname.startswith('research_match_'+query):
-                    f_exists = True
-                if f_exists is True:
-                    while os.path.exists(fullpath):
-                        try:
-                            os.remove(fullpath)
-                        except Exception as e:
-                            pass
+def NFD(text):
+    return unicodedata.normalize('NFD', text)
+
+
+def noCase(text):
+    return NFD(NFD(text).casefold())
+
+
+def convert_bytes(num):
+    """ bytes for humans """
+
+    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if num < 1024.0:
+            return str(num)+' '+x
+        num /= 1024.0
 
 
 def display_progress_unknown(str_progress='', progress_list=[], str_pre_append='', str_append=''):
@@ -317,18 +327,10 @@ def results_handler(search_str='', re_display_results=True):
             results_handler(search_str=search_str, re_display_results=False)
 
 
-def GetTime(_sec):
-    sec = timedelta(seconds=int(_sec))
-    d = datetime(1, 1, 1) + sec
-    return str("%d:%d:%d:%d" % (d.day-1, d.hour, d.minute, d.second))
-
-
 def research_progress(i_chunk=int, _commands=[], len_pdf_list=int, _chunk_pdf_list=int, elapsed_time=str):
     # todo: possibly add more detail to progress monitor.
     print('[PROGRESS] [chunk: ' + str(i_chunk) + '/' + str(len(_chunk_pdf_list)) +
-          '] [total time taken: ' + str(elapsed_time) + ']',
-          end='\r',
-          flush=True)
+          '] [total time taken: ' + str(elapsed_time) + ']', end='\r', flush=True)
 
 
 def search_library(_path='', search_str='', _threads=2):
@@ -408,38 +410,46 @@ def add_book_id(book_id):
     book_id_store.append(book_id)
 
 
-def dl_id_check(book_id):
+def dl_id_check(book_id=str, check_type=str):
     """ check if book id in download file  """
-    ensure_data_paths()
 
+    global dl_id_store
+    ensure_data_paths()
     bool_dl_id_check = False
-    if os.path.exists(f_dl_id):
-        with codecs.open(f_dl_id, 'r', encoding='utf8') as fo:
-            for line in fo:
-                line = line.strip()
-                if line == str(book_id):
-                    bool_dl_id_check = True
-                    break
-    else:
-        print(get_dt() + '[DL_INDEX] is missing.')
+    if check_type == 'read-file':
+        if os.path.exists(f_dl_id):
+            with codecs.open(f_dl_id, 'r', encoding='utf8') as fo:
+                for line in fo:
+                    line = line.strip()
+                    if line == str(book_id):
+                        bool_dl_id_check = True
+                        break
+                    if line not in dl_id_store:
+                        dl_id_store.append(line)
+        else:
+            print(get_dt() + '[DL_INDEX] is missing.')
+    elif check_type == 'memory':
+        if book_id in dl_id_store:
+            bool_dl_id_check = True
     return bool_dl_id_check
 
 
 def add_dl_id(book_id):
     """" add book id to download file """
 
+    global dl_id_store
     ensure_data_paths()
-
     with codecs.open(f_dl_id, 'a', encoding='utf8') as fo:
         fo.write(book_id + '\n')
     fo.close()
+    dl_id_store.append(book_id)
 
 
 def rem_dl_id(book_id):
     """" remove book id from download file """
 
+    global dl_id_store
     ensure_data_paths()
-
     new = []
     with open(f_dl_id, 'r') as fo:
         for line in fo:
@@ -447,34 +457,18 @@ def rem_dl_id(book_id):
             if line != book_id:
                 new.append(line)
     fo.close()
-
     with open(f_dl_id, 'w') as fo:
         fo.close()
     with open(f_dl_id, 'a') as fo:
         for _ in new:
             fo.write(_ + '\n')
     fo.close()
-
-
-def NFD(text):
-    return unicodedata.normalize('NFD', text)
-
-
-def noCase(text):
-    return NFD(NFD(text).casefold())
-
-
-def convert_bytes(num):
-    """ bytes for humans """
-
-    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
-        if num < 1024.0:
-            return str(num)+' '+x
-        num /= 1024.0
+    dl_id_store.remove(book_id)
 
 
 def enumerate_ids():
     """ Used to measure multiple instances/types of progress during download """
+    # todo: simplify/reduce function size
 
     global page_max, search_q, total_books
     print('_' * 88)
@@ -490,11 +484,11 @@ def enumerate_ids():
         try:
             ids = library_.search(query=search_q, mode=search_mode, page=i_page, per_page=100)
             print(get_dt() + '[SEARCHING] [PAGE] [' + str(i_page-1) + ']', end='\r', flush=True)
-            # print(get_dt() + '[BOOK IDs] ' + str(ids))
             for _ in ids:
                 if _ not in ids_:
                     ids_n.append(_)
         except Exception as e:
+            # todo: expand handling
             print(e)
             add_page = False
         if not ids:
@@ -515,41 +509,37 @@ def compile_ids(search_q, i_page):
     """ compile a fresh set of book ids per page (prevents overloading request) """
 
     global ids_
-
     print('_' * 88)
     print('')
     print(get_dt() + '[COMPILE IDS]')
     ids_ = []
     f_dir = d_library_genesis + '/' + search_q + '/'
-
     try:
         library_ = Library()
         ids = library_.search(query=search_q, mode=search_mode, page=i_page, per_page=100)
         ids_ = ids
-
     except Exception as e:
+        # todo: expand handling
         print(get_dt() + str(e))
         time.sleep(1)
         compile_ids(search_q, i_page)
-
     lookup_ids = library_.lookup(ids_)
     print(get_dt() + '[PAGE] ' + str(i_page))
     print(get_dt() + '[BOOKS] ' + str(len(ids_)))
-
     if ids_:
-        # print('ids_', ids_)
         ensure_library_path()
         if not os.path.exists(f_dir):
             os.mkdir(f_dir)
-        enumerate_book(search_q, f_dir, lookup_ids)
+        download_handler(search_q, f_dir, lookup_ids)
 
 
 def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
     """ attempts to download a book with n retries according to --retry-max """
+    # todo: simplify/reduce function size
 
     global max_retry, max_retry_i, total_dl_success, limit_speed
 
-    if dl_id_check(book_id=book_id) is False:
+    if dl_id_check(book_id=book_id, check_type='memory') is False:
         add_dl_id(book_id=book_id)
 
     char_limit = 0
@@ -591,6 +581,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                                             factor=50,
                                             multiplier=multiplier)
                 except Exception as e:
+                    # todo: expand handling
                     print(e)
                     time.sleep(3)
 
@@ -598,27 +589,27 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
                     time.sleep(1)
 
         except Exception as e:
+            # todo: expand handling
             e = str(e)
             print(e)
             time.sleep(3)
             clear_console_line(char_limit=char_limit)
-            pr_str = str(get_dt() + '[' + colorama.Style.BRIGHT +
-                         colorama.Fore.RED + 'ERROR' + colorama.Style.RESET_ALL + ']')
+            pr_str = str(get_dt() + '[' + color(s='ERROR', c='R') + ']')
             pr_technical_data(pr_str)
             char_limit = int(len(pr_str))
 
     out.close()
     try:
         r.release_conn()
-    except:
+    except Exception as e:
+        # todo: expand handling
         pass
 
     if int(dl_sz) == int(filesize):
         total_dl_success += 1
         pr_technical_data('')
         print('\n')
-        print(str(get_dt() + '[' + colorama.Style.BRIGHT +
-                  colorama.Fore.GREEN + 'DOWNLOADED SUCCESSFULLY' + colorama.Style.RESET_ALL + ']'))
+        print(get_dt() + '[' + color(s='DOWNLOADED SUCCESSFULLY', c='G') + ']')
 
         rem_dl_id(book_id=book_id)
 
@@ -627,8 +618,7 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
 
     else:
         clear_console_line(char_limit=char_limit)
-        pr_str = str(get_dt() + '[' + colorama.Style.BRIGHT +
-                     colorama.Fore.RED + 'DOWNLOADED FAILED' + colorama.Style.RESET_ALL + ']')
+        pr_str = str(get_dt() + '[' + color(s='DOWNLOAD FAILED', c='R') + ']')
         pr_technical_data(pr_str)
         char_limit = int(len(pr_str))
 
@@ -657,10 +647,128 @@ def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
             dl(href, save_path, str_filesize, filesize, title, author, year, book_id)
 
 
-def enumerate_book(search_q, f_dir, lookup_ids):
-    """ obtains book details using book id and calls dl function if certain conditions are met """
+def get_book_details(id=str):
+    """ use book ID to return book details """
 
-    global ids_, dl_method, max_retry_i, no_md5, no_ext, failed, total_books, total_i, bool_no_cover
+    book_id = id.id
+    title = id.title.strip()
+    author = id.author.strip()
+    year = id.year.strip()
+    md5 = id.md5.strip()
+    filesize = id.filesize.strip()
+    if title == '':
+        title = 'unknown_title'
+    if author == '':
+        author = 'unknown_author'
+    if year == '0' or not year:
+        year = 'unknown_year'
+    return book_id, title, author, year, md5, filesize
+
+
+def get_soup(_md5=str):
+    """ return soup """
+
+    url = ('http://library.lol/main/' + str(_md5))
+    rHead = requests.get(url)
+    data = rHead.text
+    soup = BeautifulSoup(data, "html.parser")
+    return soup
+
+
+def get_extension(_soup=[]):
+    """ return file extension from soup """
+
+    href = ''
+    ext = ''
+    for link in _soup.find_all('a'):
+        href = (link.get('href'))
+        idx = str(href).rfind('.')
+        _ext_ = str(href)[idx:]
+        for _ in sol_ext.ext_:
+            if not _ == '.html':
+                if str(noCase(_ext_).strip()) == '.' + str(_).strip().lower():
+                    ext = '.' + str(_.lower())
+                    break
+        break
+    return href, ext
+
+
+def get_cover_href(_soup=[]):
+    """ return image url from soup """
+
+    global bool_no_cover
+    img_ = ''
+    if bool_no_cover is False:
+        for link in _soup.find_all('img'):
+            src = (link.get('src'))
+            if src:
+                if src.endswith('.jpg'):
+                    img_ = 'http://library.lol/' + src
+                    break
+    return img_
+
+
+def download_cover(_save_path=str, _url=str):
+    _download_finished = False
+    if not os.path.exists(_save_path):
+        try:
+            http = urllib3.PoolManager(retries=retries)
+            r = http.request('GET', _url, preload_content=False, headers=headers)
+            with open(_save_path, 'wb') as fo:
+                while True:
+                    data = r.read(1024)
+                    if not data:
+                        break
+                    fo.write(data)
+            fo.close()
+            _download_finished = True
+        except Exception as e:
+            # todo: expand handling
+            _download_finished = False
+        try:
+            r.release_conn()
+        except:
+            # todo: expand handling
+            pass
+    return _download_finished
+
+
+def make_filenames(_f_dir=str, _ext=str, _title=str, _author=str, _year=str, _book_id=str):
+    """ create a Windows safe filename """
+
+    save_path = ''
+    save_path_img = ''
+    print(get_dt() + '[EXTENSION] ' + str(_ext))
+    save_path = _f_dir + "".join([c for c in _title if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
+    save_path = save_path + ' (by ' + "".join([c for c in _author if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
+    save_path = save_path + ' ' + "".join([c for c in _year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')_' + _book_id + _ext
+
+    if bool_no_cover is False:
+        save_path_img = save_path + '.jpg'
+
+    if len(save_path) >= 255:
+        save_path = save_path[:259 + len(_ext)]
+        save_path = save_path + '...)' + _ext
+
+    return save_path, save_path_img
+
+
+def display_book_details(_i_page=int, _page_max=int, _i_progress=int, _ids_=[], _total_books=int, _search_q=str, _book_id=str, _title=str, _author=str, _year=str, _filesize=str):
+    print(get_dt() + '[PAGE] ' + color(s=str(_i_page), c='LC') + ' / ' + color(s=str(_page_max), c='LC'))
+    print(get_dt() + '[PROGRESS] ' + color(s=str(_i_progress), c='LC') + ' / ' + color(s=str(len(_ids_)), c='LC') + ' (' + color(s=str(_total_books), c='LC') + ')')
+    print(get_dt() + '[KEYWORD] ' + str(_search_q))
+    print(get_dt() + '[BOOK ID] ' + str(_book_id))
+    print(get_dt() + '[TITLE] ' + color(s=str(_title), c='LC'))
+    print(get_dt() + '[AUTHOR] ' + color(s=str(_author), c='LC'))
+    print(get_dt() + '[YEAR] ' + str(_year))
+    print(get_dt() + '[FILE SIZE] ' + str(convert_bytes(int(_filesize))))
+
+
+def download_handler(search_q, f_dir, lookup_ids):
+    """ obtains book details using book id and calls dl function if certain conditions are met """
+    # todo: simplify/reduce function size
+
+    global ids_, max_retry_i, no_md5, no_ext, failed, total_books, total_i, bool_no_cover
     i_progress = 0
     for _ in lookup_ids:
         try:
@@ -669,143 +777,67 @@ def enumerate_book(search_q, f_dir, lookup_ids):
             max_retry_i = 0
             print('_' * 88)
             print('')
-            if dl_method == 'keyword':
-                print(get_dt() + '[PAGE] ' + colorama.Style.BRIGHT +
-                      colorama.Fore.LIGHTCYAN_EX + str(i_page) + colorama.Style.RESET_ALL +
-                      ' / ' + colorama.Style.BRIGHT +
-                      colorama.Fore.LIGHTCYAN_EX + str(page_max) + colorama.Style.RESET_ALL)
-
-                print(get_dt() + '[PROGRESS] ' + colorama.Style.BRIGHT +
-                      colorama.Fore.LIGHTCYAN_EX + str(i_progress) + colorama.Style.RESET_ALL +
-                      ' / ' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX + str(len(ids_)) +
-                      colorama.Style.RESET_ALL + ' (' + colorama.Style.BRIGHT + colorama.Fore.LIGHTCYAN_EX +
-                      str(total_books) + colorama.Style.RESET_ALL + ')')
-                print(get_dt() + '[KEYWORD] ' + str(search_q))
 
             # uncomment to display entire dictionary
             # print(_.__dict__)
 
-            book_id = _.id
-            print(get_dt() + '[BOOK ID] ' + str(book_id))
+            book_id, title, author, year, md5, filesize = get_book_details(id=_)
 
-            bool_dl_id_check = dl_id_check(book_id=book_id)
+            display_book_details(_i_page=i_page, _page_max=page_max, _i_progress=i_progress, _ids_=ids_,
+                                 _total_books=total_books, _search_q=search_q, _book_id=book_id, _title=title,
+                                 _author=author, _year=year, _filesize=filesize)
+
+            str_filesize = str(convert_bytes(int(filesize)))
+
+            if md5 == '':
+                print(get_dt() + '[MD5] could not find md5, skipping.')
+                no_md5.append([title, author, year])
+                break
+
+            bool_dl_id_check = dl_id_check(book_id=book_id, check_type='memory')
             bool_book_id_check = book_id_check(book_id=book_id, check_type='memory')
-            # print(get_dt() + '[CHECK DL_ID] ' + str(bool_dl_id_check))
-            # print(get_dt() + '[CHECK BOOK_ID] ' + str(bool_book_id_check))
-
-            title = _.title.strip()
-            if title == '':
-                title = 'unknown_title'
-            print(get_dt() + '[TITLE] ' + colorama.Style.BRIGHT + colorama.Fore.CYAN + str(title) +
-                  colorama.Style.RESET_ALL)
-
-            author = _.author.strip()
-            if author == '':
-                author = 'unknown_author'
-            print(get_dt() + '[AUTHOR] ' + colorama.Style.BRIGHT + colorama.Fore.CYAN + str(author) +
-                  colorama.Style.RESET_ALL)
-
-            year = _.year.strip()
-            if year == '0' or not year:
-                year = 'unknown_year'
-            print(get_dt() + '[YEAR] ' + str(year))
 
             if bool_book_id_check is False or bool_dl_id_check is True:
 
-                filesize = _.filesize.strip()
-                print(get_dt() + '[FILE SIZE] ' + str(convert_bytes(int(filesize))))
-                str_filesize = str(convert_bytes(int(filesize)))
-
-                md5 = _.md5.strip()
-                if md5 == '':
-                    print(get_dt() + '[MD5] could not find md5, skipping.')
-                    no_md5.append([title, author, year])
-                    break
-                # print(get_dt() + '[MD5] ' + md5)
-
-                url = ('http://library.lol/main/' + str(md5))
-                rHead = requests.get(url)
-                data = rHead.text
-                soup = BeautifulSoup(data, "html.parser")
-                href = ''
-                ext = ''
-                for link in soup.find_all('a'):
-                    href = (link.get('href'))
-                    idx = str(href).rfind('.')
-                    _ext_ = str(href)[idx:]
-                    for _ in sol_ext.ext_:
-                        if not _ == '.html':
-                            if str(noCase(_ext_).strip()) == '.' + str(_).strip().lower():
-                                ext = '.' + str(_.lower())
-                                break
-                    break
-
-                if bool_no_cover is False:
-                    img_ = ''
-                    for link in soup.find_all('img'):
-                        src = (link.get('src'))
-                        if src:
-                            if src.endswith('.jpg'):
-                                # print(get_dt() + '[IMAGE] ' + str(src))
-                                img_ = 'http://library.lol/' + src
-                                break
+                _soup = get_soup(_md5=md5)
+                href, ext = get_extension(_soup=_soup)
+                img_ = get_cover_href(_soup=_soup)
 
                 if ext:
-                    print(get_dt() + '[EXTENSION] ' + str(ext))
-                    save_path = f_dir + "".join([c for c in title if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
-                    save_path = save_path + ' (by ' + "".join([c for c in author if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
-                    save_path = save_path + ' ' + "".join([c for c in year if c.isalpha() or c.isdigit() or c == ' ']).rstrip() + ')_' + book_id + ext
-                    if bool_no_cover is False:
-                        save_path_img = save_path + '.jpg'
-
-                    if len(save_path) >= 255:
-                        save_path = save_path[:259+len(ext)]
-                        save_path = save_path + '...)' + ext
-                        # print(get_dt() + '[LIMITING FILENAME LENGTH]' + str(save_path))
+                    # create filenames
+                    save_path, save_path_img = make_filenames(_f_dir=f_dir, _ext=ext, _title=title, _author=author,
+                                                              _year=year, _book_id=book_id)
 
                     # dl book cover
                     if bool_no_cover is False:
-                        if not os.path.exists(save_path_img):
-                            try:
-                                print(get_dt() + '[SAVING] [COVER]')
-                                http = urllib3.PoolManager(retries=retries)
-                                r = http.request('GET', img_, preload_content=False, headers=headers)
-                                with open(save_path_img, 'wb') as fo:
-                                    while True:
-                                        data = r.read(1024)
-                                        if not data:
-                                            break
-                                        fo.write(data)
-                                fo.close()
-                            except Exception as e:
-                                print(get_dt() + '[SAVING] [COVER] failed.')
-                            try:
-                                r.release_conn()
-                            except:
-                                pass
-                    # else:
-                    #     print(get_dt() + '[COVER] Skipping cover download.')
+                        print(get_dt() + '[SAVING] [COVER]')
+                        _download_finished = download_cover(_save_path=save_path_img, _url=img_)
+                        if _download_finished is False:
+                            print(get_dt() + '[SAVING] [COVER] failed.')
 
-                    # dl book
+                    # dl book convey new
                     allow_dl = False
                     if bool_dl_id_check is False and not os.path.exists(str(save_path)):
                         """ Book ID not in book_id.txt and not in dl_id.txt and save path does not exist """
                         print(get_dt() + '[SAVING] [NEW]')
                         allow_dl = True
 
+                    # dl book convey retry
                     elif bool_dl_id_check is True:
                         """ Book ID in dl_id.txt (overwrite an existing file if save path exists already) """
                         print(get_dt() + '[SAVING] [RETRYING]')
                         allow_dl = True
 
+                    # download book
                     if allow_dl is True:
                         """ download book and write """
                         try:
                             dl(href, save_path, str_filesize, filesize, title, author, year, book_id)
                         except Exception as e:
+                            # todo: expand handling
                             print(get_dt() + str(e))
                             failed.append([title, author, year, href])
-                            enumerate_book(search_q, f_dir, lookup_ids)
+                            download_handler(search_q, f_dir, lookup_ids)
 
                     else:
                         """ Block to preserve existing file with the same name that is also not mentioned in dl_id """
@@ -818,8 +850,9 @@ def enumerate_book(search_q, f_dir, lookup_ids):
                 print(get_dt() + '[SKIPPING] Book is registered in book_id.')
 
         except Exception as e:
+            # todo: expand handling
             print(get_dt() + str(e))
-            enumerate_book(search_q, f_dir, lookup_ids)
+            download_handler(search_q, f_dir, lookup_ids)
 
 
 def summary():
@@ -858,7 +891,6 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print('               [AUTHOR] [Benjamin Jack Cullen]')
     print('')
-    # print('')
     print(' [DOWNLOAD]')
     print('')
     print('   [-h]              [Displays this help message]')
@@ -1023,10 +1055,10 @@ elif '--research-mode' in sys.argv:
 if run_function == 0:
     clear_console()
     book_id_check(book_id='', check_type='read-file')
+    dl_id_check(book_id='', check_type='read-file')
     search_q = search_q.strip()
     enumerate_ids()
     if page_max >= 1:
-        dl_method = 'keyword'
         while i_page <= page_max:
             compile_ids(search_q, i_page)
             i_page += 1
