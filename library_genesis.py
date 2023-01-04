@@ -489,7 +489,6 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
         except Exception as e:
             if debug is True:
                 print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
-                char_limit = int(len(str(e))) + 9 + int(len(str(get_dt())))
             time.sleep(5)
 
             # retry enumeration (connection issue also library genesis has a max con 50 clients)
@@ -970,6 +969,10 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('   [-d]              [Specify directory to research]')
     print('   [--research]      [Specify research query]')
     print('                     [This argument MUST be specified last]')
+    print('')
+    print(' [OPTIONS]')
+    print('')
+    print('   [--debug]         [Enables debug mode]')
     print('')
     print(' [EXAMPLES]')
     print('')
