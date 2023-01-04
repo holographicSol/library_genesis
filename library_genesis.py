@@ -112,7 +112,7 @@ max_retry_i = 0
 i_page = 1
 page_max = 0
 total_i = 0
-limit_speed = 0
+limit_speed = 1024
 pdf_max = 0
 threads = 4
 i_match = 0
@@ -121,6 +121,7 @@ verbosity = False
 bool_no_cover = False
 start_page = False
 bool_failed_once = False
+_throttle = False
 book_id_store = []
 dl_id_store = []
 no_ext = []
@@ -515,7 +516,7 @@ def enumerate_ids():
     total_books = str(len(ids_n))
 
 
-def compile_ids(search_q, i_page):
+def compile_ids(_search_q=str, _i_page=int):
     """ compile a fresh set of book ids per page (prevents overloading request) """
 
     global ids_
@@ -532,7 +533,7 @@ def compile_ids(search_q, i_page):
         # todo: expand handling
         print(get_dt() + str(e))
         time.sleep(3)
-        compile_ids(search_q, i_page)
+        compile_ids(_search_q=search_q, _i_page=i_page)
     lookup_ids = library_.lookup(ids_)
 
     print(get_dt() + '[BOOKS] ' + str(len(ids_)))
@@ -573,9 +574,15 @@ def download_cover(_save_path=str, _url=str):
 def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
     """ downloader """
     # todo: refine, write once
-    global max_retry, max_retry_i, limit_speed
+    global max_retry, max_retry_i, limit_speed, _throttle
+
     if dl_id_check(book_id=_book_id, check_type='memory') is False:
         add_dl_id(book_id=_book_id)
+
+    pre_append = ' [DOWNLOADING BOOK] '
+    if _throttle is True:
+        pre_append = ' [DOWNLOADING BOOK] [THROTTLING ' + str(human_limit_speed) + '] '
+
     dl_sz = 0
     open(_save_path, 'w').close()
     with open(_save_path, 'wb') as out:
@@ -584,26 +591,23 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
             r = http.request('GET', _href, preload_content=False, headers=headers)
             print('')
             while True:
-                if limit_speed == 0:
-                    data = r.read(1024)
-                    pre_append = ' [DOWNLOADING BOOK] '
-                else:
-                    data = r.read(limit_speed)
-                    pre_append = ' [DOWNLOADING BOOK] [THROTTLING ' + str(human_limit_speed) + '] '
-                if not data:
+                data = r.read(limit_speed)
+                if data:
+
+                    out.write(data)
+
                     dl_sz += int(len(data))
+                    display_progress(_part=dl_sz, _whole=_filesize, _pre_append=pre_append)
+                    if _throttle is True:
+                        time.sleep(1)
+                if not data:
+                    # dl_sz += int(len(data))
                     break
-                out.write(data)
-                dl_sz += int(len(data))
-                display_progress(_part=dl_sz, _whole=_filesize, _pre_append=pre_append)
-                if limit_speed != 0:
-                    time.sleep(1)
             try:
                 r.release_conn()
             except Exception as e:
                 # todo: expand handling
                 pass
-
         except Exception as e:
             # todo: expand handling
             time.sleep(3)
@@ -650,14 +654,14 @@ def download_handler(_href=str, _save_path=str, _str_filesize=str, _filesize=int
     bool_failed_once = False
 
 
-def get_book_details(id=str):
+def get_book_details(_id=str):
     """ use book ID to return book details """
 
-    title = id.title.strip()
-    author = id.author.strip()
-    year = id.year.strip()
-    md5 = id.md5.strip()
-    filesize = id.filesize.strip()
+    title = _id.title.strip()
+    author = _id.author.strip()
+    year = _id.year.strip()
+    md5 = _id.md5.strip()
+    filesize = _id.filesize.strip()
     if title == '':
         title = 'unknown_title'
     if author == '':
@@ -763,7 +767,7 @@ def download_main(search_q, f_dir, lookup_ids):
                 # uncomment to display entire dictionary
                 # print(_.__dict__)
 
-                title, author, year, md5, filesize = get_book_details(id=_)
+                title, author, year, md5, filesize = get_book_details(_id=_)
 
                 display_book_details(_i_page=i_page, _page_max=page_max, _i_progress=i_progress, _ids_=ids_,
                                      _total_books=total_books, _search_q=search_q, _book_id=book_id, _title=title,
@@ -993,6 +997,7 @@ if '--download-mode' in sys.argv and not '-u' in sys.argv:
             if sys.argv[i+1].isdigit():
                 limit_speed = int(sys.argv[i+1])
                 human_limit_speed = str(convert_bytes(int(limit_speed)))
+                _throttle = True
             else:
                 print(get_dt() + "[failed] --throttle accepts digits argument.")
                 run_function = 1984
@@ -1049,7 +1054,7 @@ if run_function == 0:
     enumerate_ids()
     if page_max >= 1:
         while i_page <= page_max:
-            compile_ids(search_q, i_page)
+            compile_ids(_search_q=search_q, _i_page=i_page)
             i_page += 1
     summary()
 
