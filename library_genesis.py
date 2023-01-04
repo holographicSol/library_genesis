@@ -652,13 +652,13 @@ def download_handler(_href=str, _save_path=str, _str_filesize=str, _filesize=int
         download_saved = save_download(_save_path=_save_path, _data=_data, _filesize=_filesize, _mode='check_size')
         if download_saved is True:
             # convey successful save: download 100% bytes, saved 100% bytes. note: this does not reflect file integrity.
-            print(get_dt() + '[' + color(s='SAVE SUCCESSFUL' + ']', c='G'))
+            print(get_dt() + '[' + color(s='SAVE SUCCESSFUL', c='G') + ']')
             rem_dl_id(book_id=_book_id)
             if book_id_check(book_id=_book_id, check_type='memory') is False:
                 add_book_id(_book_id)
         else:
             # convey possible issue saving that may under many circumstances be ignored.
-            print(get_dt() + color(s='[SAVED SUCCESSFUL]', c='Y'))
+            print(get_dt() + '[' + color(s='SAVE SUCCESSFUL', c='Y') + ']')
 
     # handle download failed
     else:
