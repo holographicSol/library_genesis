@@ -116,6 +116,7 @@ i_char_progress = 0
 bool_no_cover = False
 bool_failed_once = False
 _throttle = False
+debug = False
 book_id_store = []
 dl_id_store = []
 
@@ -484,7 +485,7 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
                 _i_page_ += 1
                 _total_books += int(len(ids))
 
-        except Exception as e:  # todo: expand handling
+        except Exception as e:
             print(' ' + str(e), end='\r', flush=True)
             char_limit = int(len(str(e)))+1
             time.sleep(5)
@@ -495,17 +496,20 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
 
         # stop adding pages (no more pages)
         if not ids:
+            print('')
             add_page = False
 
         # wait between each search to try and be more server friendly
         time.sleep(1)
-    print('')
+
     _total_books = int(_total_books)
     return _all_pages_ids, _page_max, _total_books
 
 
 def lookup_ids(_search_q=str, _ids_=[]):
     """ lookup n ids (prevents overloading lookup request) """
+
+    global debug
 
     try:
         library_ = Library()
@@ -515,8 +519,11 @@ def lookup_ids(_search_q=str, _ids_=[]):
             return _lookup_ids_
 
     except Exception as e:
-        # todo: expand handling
-        # print(e)
+        if debug is True:
+            print(' ' + str(e), end='\r', flush=True)
+            char_limit = int(len(str(e))) + 1
+            time.sleep(5)
+            print(' ' * char_limit, end='\r', flush=True)
         time.sleep(5)
         lookup_ids(_search_q=_search_q, _ids_=_ids_)
 
@@ -546,6 +553,7 @@ def save_download(_save_path=str, _data=bytes, _filesize=int, _mode=''):
 def download_cover(_save_path=str, _url=str):
     """ merge after dl refinement with a single download function """
     global limit_speed, _throttle
+    global debug
 
     _download_finished = False
     _data = bytes()
@@ -561,11 +569,21 @@ def download_cover(_save_path=str, _url=str):
                 else:
                     break
             _download_finished = True
-        except Exception as e:  # todo: expand handling
+        except Exception as e:
+            if debug is True:
+                print(' ' + str(e), end='\r', flush=True)
+                char_limit = int(len(str(e))) + 1
+                time.sleep(5)
+                print(' ' * char_limit, end='\r', flush=True)
             _download_finished = False
         try:
             r.release_conn()
-        except:  # todo: expand handling
+        except Exception as e:
+            if debug is True:
+                print(' ' + str(e), end='\r', flush=True)
+                char_limit = int(len(str(e))) + 1
+                time.sleep(5)
+                print(' ' * char_limit, end='\r', flush=True)
             pass
     if _download_finished is True:
         save_download(_save_path=_save_path, _data=_data)
@@ -585,6 +603,7 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
     """ downloader """
 
     global max_retry, max_retry_i, limit_speed, _throttle
+    global debug
 
     if dl_id_check(book_id=_book_id, check_type='memory') is False:
         add_dl_id(book_id=_book_id)
@@ -602,18 +621,25 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
                     time.sleep(1)
             else:
                 break
-    except Exception as e:  # todo: expand handling
+    except Exception as e:
         clear_console_line(char_limit=100)
-        # print(get_dt() + '[' + color(s='ERROR', c='R') + ']' + str(e), end='\r', flush=True)
+        if debug is True:
+            print(get_dt() + '[' + color(s='ERROR', c='R') + ']' + str(e), end='\r', flush=True)
         time.sleep(5)
     try:
         r.release_conn()
-    except Exception as e:  # todo: expand handling
+    except Exception as e:
+        if debug is True:
+            print(' ' + str(e), end='\r', flush=True)
+            char_limit = int(len(str(e))) + 1
+            time.sleep(5)
+            print(' ' * char_limit, end='\r', flush=True)
         pass
     return dl_sz, _data
 
 
-def download_handler(_href=str, _save_path=str, _str_filesize=str, _filesize=int, _title=str, _author=str, _year=str, _book_id=str):
+def download_handler(_href=str, _save_path=str, _str_filesize=str, _filesize=int, _title=str, _author=str, _year=str,
+                     _book_id=str):
     """ attempts to download a book with n retries according to --retry-max """
 
     global max_retry, max_retry_i, limit_speed, bool_failed_once
@@ -760,6 +786,8 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
     # todo: simplify/reduce function size
 
     global max_retry_i, bool_no_cover, i_page
+    global debug
+
     sub_i_progress = int(0)
     i_skipped = 0
     for _ in _lookup_ids:
@@ -834,8 +862,11 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
                                                      _filesize=filesize,
                                                      _title=title, _author=author, _year=year, _book_id=book_id)
                                 except Exception as e:
-                                    # todo: expand handling
-                                    # print(get_dt() + str(e))
+                                    if debug is True:
+                                        print(' ' + str(e), end='\r', flush=True)
+                                        char_limit = int(len(str(e))) + 1
+                                        time.sleep(5)
+                                        print(' ' * char_limit, end='\r', flush=True)
                                     download_main(_search_q=_search_q, _f_dir=_f_dir, _lookup_ids=_lookup_ids,
                                                   _page_max=_page_max, _i_progress=_i_progress)
 
@@ -857,8 +888,11 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
                     i_skipped += 1
 
         except Exception as e:
-            # todo: expand handling
-            # print(get_dt() + str(e))
+            if debug is True:
+                print(' ' + str(e), end='\r', flush=True)
+                char_limit = int(len(str(e))) + 1
+                time.sleep(5)
+                print(' ' * char_limit, end='\r', flush=True)
             download_main(_search_q=_search_q, _f_dir=_f_dir, _lookup_ids=_lookup_ids, _page_max=_page_max,
                           _i_progress=_i_progress)
 
@@ -1061,36 +1095,38 @@ elif '--research-mode' in sys.argv:
 
 # download by keyword
 if run_function == 0:
-    book_id_check(book_id='', check_type='read-file')
-    dl_id_check(book_id='', check_type='read-file')
-    search_q = search_q.strip()
+    if i_page > 0:
+        book_id_check(book_id='', check_type='read-file')
+        dl_id_check(book_id='', check_type='read-file')
+        search_q = search_q.strip()
 
-    print(get_dt() + '[ATTEMPTING CONNECTION]')
-    all_pages_ids, page_max, total_books = enumerate_ids(_search_q=search_q, _search_mode=search_mode)
-    print(get_dt() + '[PAGES] [' + str(page_max) + ']')
-    if i_page <= page_max and i_page > 0:
-        if i_page > 1:
-            print(get_dt() + '[SKIPPING TO PAGE] [' + str(i_page) + ']')
-        if page_max >= 1:
-            _i_page = 1
-            for _ in all_pages_ids:
-                # print(get_dt() + '[PAGE] [' + str(_i_page) + ']')
-                if _i_page >= i_page:
-                    _lookup_ids = lookup_ids(_search_q=search_q, _ids_=_)
-                    f_dir = d_library_genesis + '/' + search_q + '/'
-                    ensure_library_path()
-                    if not os.path.exists(f_dir):
-                        os.mkdir(f_dir)
-                    download_main(_search_q=search_q, _f_dir=f_dir, _lookup_ids=_lookup_ids, _page_max=page_max,
-                                  _total_books=total_books)
-                    i_page += 1
-                _i_page += 1
-    elif i_page > page_max:
-        print(get_dt() + '[PAGE] [' + str(i_page) + '] [EXCEEDS PAGE MAX]')
-    elif i_page == 0:
+        print(get_dt() + '[ATTEMPTING CONNECTION]')
+        all_pages_ids, page_max, total_books = enumerate_ids(_search_q=search_q, _search_mode=search_mode)
+        print(get_dt() + '[PAGES] [' + str(page_max) + ']')
+
+        if all_pages_ids:
+            if i_page <= page_max:
+                if i_page > 1:
+                    print(get_dt() + '[SKIPPING TO PAGE] [' + str(i_page) + ']')
+                if page_max >= 1:
+                    _i_page = 1
+                    for _ in all_pages_ids:
+                        # print(get_dt() + '[PAGE] [' + str(_i_page) + ']')
+                        if _i_page >= i_page:
+                            _lookup_ids = lookup_ids(_search_q=search_q, _ids_=_)
+                            f_dir = d_library_genesis + '/' + search_q + '/'
+                            ensure_library_path()
+                            if not os.path.exists(f_dir):
+                                os.mkdir(f_dir)
+                            download_main(_search_q=search_q, _f_dir=f_dir, _lookup_ids=_lookup_ids, _page_max=page_max,
+                                          _total_books=total_books)
+                            i_page += 1
+                        _i_page += 1
+            elif i_page > page_max:
+                print(get_dt() + '[PAGE] [' + str(i_page) + '] [EXCEEDS PAGE MAX]')
+        summary()
+    else:
         print(get_dt() + '[PAGE] [' + str(i_page) + '] [DOES NOT EXIST]')
-
-    summary()
 
 # research
 elif run_function == 2:
