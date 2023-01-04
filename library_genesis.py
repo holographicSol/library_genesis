@@ -109,7 +109,6 @@ headers = {
 run_function = 1984
 max_retry = 3
 max_retry_i = 0
-total_dl_success = 0
 i_page = 1
 page_max = 0
 total_i = 0
@@ -125,7 +124,7 @@ book_id_store = []
 dl_id_store = []
 no_ext = []
 no_md5 = []
-failed = []
+# failed = []
 ids_ = []
 pdf_list = []
 cwd = os.getcwd()
@@ -206,6 +205,20 @@ def display_progress_unknown(str_progress='', progress_list=[], str_pre_append='
         i_char_progress = 0
     else:
         i_char_progress += 1
+
+
+def display_progress(_part=int, _whole=int, _pre_append=str):
+    pyprogress.progress_bar(part=int(_part), whole=int(_whole),
+                            pre_append=_pre_append,
+                            append=str(''),
+                            encapsulate_l='|',
+                            encapsulate_r='|',
+                            encapsulate_l_color='LIGHTWHITE_EX',
+                            encapsulate_r_color='LIGHTWHITE_EX',
+                            progress_char=' ',
+                            bg_color='GREEN',
+                            factor=50,
+                            multiplier=multiplier)
 
 
 def research_files_enumerate(_path=''):
@@ -390,10 +403,8 @@ def book_id_check(book_id, check_type):
         with open(f_book_id, 'r') as fo:
             for line in fo:
                 line = line.strip()
-                # if line == str(book_id):
-                #     bool_book_id_check = True
-                    # break
-                book_id_store.append(line)
+                if line not in book_id_store:
+                    book_id_store.append(line)
         fo.close()
     elif check_type == 'memory':
         if book_id in book_id_store:
@@ -424,9 +435,6 @@ def dl_id_check(book_id=str, check_type=str):
             with codecs.open(f_dl_id, 'r', encoding='utf8') as fo:
                 for line in fo:
                     line = line.strip()
-                    # if line == str(book_id):
-                    #     bool_dl_id_check = True
-                        # break
                     if line not in dl_id_store:
                         dl_id_store.append(line)
         else:
@@ -534,118 +542,101 @@ def compile_ids(search_q, i_page):
         download_handler(search_q, f_dir, lookup_ids)
 
 
-def dl(href, save_path, str_filesize, filesize, title, author, year, book_id):
-    """ attempts to download a book with n retries according to --retry-max """
-    # todo: simplify/reduce function size
+def download_cover(_save_path=str, _url=str):
+    """ merge after dl refinement with a single download function """
 
-    global max_retry, max_retry_i, total_dl_success, limit_speed
-
-    if dl_id_check(book_id=book_id, check_type='memory') is False:
-        add_dl_id(book_id=book_id)
-
-    char_limit = 0
-    dl_sz = 0
-
-    with open(save_path, 'w') as fo:
-        fo.close()
-    with open(save_path, 'wb') as out:
+    _download_finished = False
+    if not os.path.exists(_save_path):
         try:
             http = urllib3.PoolManager(retries=retries)
-            r = http.request('GET', href, preload_content=False, headers=headers)
-            _data = []
-            while True:
+            r = http.request('GET', _url, preload_content=False, headers=headers)
+            with open(_save_path, 'wb') as fo:
+                while True:
+                    data = r.read(1024)
+                    if not data:
+                        break
+                    fo.write(data)
+            fo.close()
+            _download_finished = True
+        except Exception as e:
+            # todo: expand handling
+            _download_finished = False
+        try:
+            r.release_conn()
+        except:
+            # todo: expand handling
+            pass
+    return _download_finished
 
+
+def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
+    """ downloader """
+    # todo: refine/reduce/simplify. write once at the end OR get fsize in bytes and skip through reading until r.read==
+    global max_retry, max_retry_i, limit_speed
+    if dl_id_check(book_id=_book_id, check_type='memory') is False:
+        add_dl_id(book_id=_book_id)
+    dl_sz = 0
+    with open(_filesize, 'wb') as out:
+        try:
+            http = urllib3.PoolManager(retries=retries)
+            r = http.request('GET', _href, preload_content=False, headers=headers)
+            print('')
+            while True:
                 if limit_speed == 0:
                     data = r.read(1024)
                     pre_append = ' [DOWNLOADING BOOK] '
                 else:
                     data = r.read(limit_speed)
                     pre_append = ' [DOWNLOADING BOOK] [THROTTLING ' + str(human_limit_speed) + '] '
-
                 if not data:
                     dl_sz += int(len(data))
                     break
-
                 out.write(data)
                 dl_sz += int(len(data))
-
-                try:
-                    pyprogress.progress_bar(part=int(dl_sz), whole=int(filesize),
-                                            pre_append=pre_append,
-                                            append=str(''),
-                                            encapsulate_l='|',
-                                            encapsulate_r='|',
-                                            encapsulate_l_color='LIGHTWHITE_EX',
-                                            encapsulate_r_color='LIGHTWHITE_EX',
-                                            progress_char=' ',
-                                            bg_color='GREEN',
-                                            factor=50,
-                                            multiplier=multiplier)
-                except Exception as e:
-                    # todo: expand handling
-                    print(e)
-                    time.sleep(3)
-
+                display_progress(_part=dl_sz, _whole=_filesize, _pre_append=pre_append)
                 if limit_speed != 0:
                     time.sleep(1)
+            try:
+                r.release_conn()
+            except Exception as e:
+                # todo: expand handling
+                pass
 
         except Exception as e:
             # todo: expand handling
-            e = str(e)
-            print(e)
             time.sleep(3)
-            clear_console_line(char_limit=char_limit)
-            pr_str = str(get_dt() + '[' + color(s='ERROR', c='R') + ']')
-            pr_technical_data(pr_str)
-            char_limit = int(len(pr_str))
-
+            clear_console_line(char_limit=100)
+            print(get_dt() + '[' + color(s='ERROR', c='R') + ']', end='\r', flush=True)
     out.close()
-    try:
-        r.release_conn()
-    except Exception as e:
-        # todo: expand handling
-        pass
+    return dl_sz
 
-    if int(dl_sz) == int(filesize):
-        total_dl_success += 1
-        pr_technical_data('')
+
+def dl(_href=str, _save_path=str, _str_filesize=str, _filesize=int, _title=str, _author=str, _year=str, _book_id=str):
+    """ attempts to download a book with n retries according to --retry-max """
+    # todo: refine
+    global max_retry, max_retry_i, limit_speed
+
+    _download = download(_href=_href, _save_path=_save_path, _filesize=_filesize, _book_id=_book_id)
+
+    if int(_download) == int(_filesize):
         print('\n')
         print(get_dt() + '[' + color(s='DOWNLOADED SUCCESSFULLY', c='G') + ']')
 
-        rem_dl_id(book_id=book_id)
-
-        if book_id_check(book_id=book_id, check_type='memory') is False:
-            add_book_id(book_id)
-
+        rem_dl_id(book_id=_book_id)
+        if book_id_check(book_id=_book_id, check_type='memory') is False:
+            add_book_id(_book_id)
     else:
-        clear_console_line(char_limit=char_limit)
-        pr_str = str(get_dt() + '[' + color(s='DOWNLOAD FAILED', c='R') + ']')
-        pr_technical_data(pr_str)
-        char_limit = int(len(pr_str))
-
-        failed.append([title, author, year, href])
+        clear_console_line(char_limit=100)
+        print(get_dt() + '[' + color(s='DOWNLOAD FAILED', c='R') + ']', end='\r', flush=True)
+        time.sleep(3)
 
         max_retry_i += 1
-        if str(max_retry).isdigit():
-            if max_retry_i < max_retry:
-
-                clear_console_line(char_limit=char_limit)
-                pr_str = str(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i)) + ' / ' + str(max_retry)
-                pr_technical_data(pr_str)
-                char_limit = int(len(pr_str))
-
-                time.sleep(3)
-                dl(href, save_path, str_filesize, filesize, title, author, year, book_id)
-
-        elif str(max_retry) == 'unlimited':
-
-            clear_console_line(char_limit=char_limit)
-            pr_str = str(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i)) + ' / ' + str(max_retry)
-            pr_technical_data(pr_str)
-            char_limit = int(len(pr_str))
-
+        if max_retry_i < max_retry or max_retry == int(0):
+            clear_console_line(char_limit=100)
+            print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' + str(max_retry), end='\r', flush=True)
             time.sleep(3)
-            dl(href, save_path, str_filesize, filesize, title, author, year, book_id)
+            dl(_href=_href, _save_path=_save_path, _str_filesize=_str_filesize, _filesize=_filesize, _title=_title,
+               _author=_author, _year=_year, _book_id=_book_id)
 
 
 def get_book_details(id=str):
@@ -707,31 +698,6 @@ def get_cover_href(_soup=[]):
     return img_
 
 
-def download_cover(_save_path=str, _url=str):
-    _download_finished = False
-    if not os.path.exists(_save_path):
-        try:
-            http = urllib3.PoolManager(retries=retries)
-            r = http.request('GET', _url, preload_content=False, headers=headers)
-            with open(_save_path, 'wb') as fo:
-                while True:
-                    data = r.read(1024)
-                    if not data:
-                        break
-                    fo.write(data)
-            fo.close()
-            _download_finished = True
-        except Exception as e:
-            # todo: expand handling
-            _download_finished = False
-        try:
-            r.release_conn()
-        except:
-            # todo: expand handling
-            pass
-    return _download_finished
-
-
 def make_filenames(_f_dir=str, _ext=str, _title=str, _author=str, _year=str, _book_id=str):
     """ create a Windows safe filename """
 
@@ -767,7 +733,7 @@ def download_handler(search_q, f_dir, lookup_ids):
     """ obtains book details using book id and calls dl function if certain conditions are met """
     # todo: simplify/reduce function size
 
-    global ids_, max_retry_i, no_md5, no_ext, failed, total_books, total_i, bool_no_cover
+    global ids_, max_retry_i, no_md5, no_ext, total_books, total_i, bool_no_cover
     i_progress = 0
     i_skipped = 0
     for _ in lookup_ids:
@@ -780,7 +746,6 @@ def download_handler(search_q, f_dir, lookup_ids):
 
             bool_book_id_check = book_id_check(book_id=book_id, check_type='memory')
             if bool_book_id_check is False:
-
                 print('_' * 88)
                 print('')
 
@@ -842,7 +807,7 @@ def download_handler(search_q, f_dir, lookup_ids):
                         except Exception as e:
                             # todo: expand handling
                             print(get_dt() + str(e))
-                            failed.append([title, author, year, href])
+                            # failed.append([title, author, year, href])
                             download_handler(search_q, f_dir, lookup_ids)
 
                     else:
@@ -853,7 +818,6 @@ def download_handler(search_q, f_dir, lookup_ids):
                     print(get_dt() + '[SKIPPING] URL with compatible file extension could not be found.')
 
             elif bool_book_id_check is True:
-                print(get_dt() + '[SKIPPING] Book is registered in book_id: ' + str(book_id), end='\r', flush=True)
                 i_skipped += 1
 
         except Exception as e:
@@ -862,6 +826,9 @@ def download_handler(search_q, f_dir, lookup_ids):
             download_handler(search_q, f_dir, lookup_ids)
 
     if i_skipped > 0:
+        # todo: separate from 'downloaded successfully'
+        print('_' * 88)
+        print('')
         print(get_dt() + '[SKIPPED] Books already registered in book_id: ' + str(i_skipped))
 
 
@@ -879,7 +846,6 @@ def summary():
         print(get_dt() + '[EXTENSIONS] This list is of urls that had no file extension and so were skipped:')
         for _ in no_ext:
             print('    ' + str(_))
-    print(get_dt() + '[TOTAL DOWNLOADED] ' + str(total_dl_success))
     print('')
     print(get_dt() + '[COMPLETE]')
     print('')
@@ -990,7 +956,8 @@ if '--download-mode' in sys.argv and not '-u' in sys.argv:
             if str(sys.argv[i+1]).isdigit():
                 max_retry = int(sys.argv[i+1])
             elif str(sys.argv[i+1]) == 'unlimited':
-                max_retry = str(sys.argv[i+1])
+                # max_retry = str(sys.argv[i+1])
+                max_retry = int(0)
             else:
                 print(get_dt() + '[failed] --retry-max cannot be ' + retry_max_)
                 run_function = 1984
