@@ -679,11 +679,19 @@ def download_handler(_href=str, _save_path=str, _str_filesize=str, _filesize=int
         if max_retry_i < max_retry or max_retry == int(0):
             clear_console_line(char_limit=100)
             if max_retry == int(0):
-                print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' +
-                      str('(unlimited)'), end='\r', flush=True)
+                if debug is False:
+                    print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' +
+                          str('(unlimited)'), end='\r', flush=True)
+                else:
+                    print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' +
+                          str('(unlimited)'))
             else:
-                print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' +
-                      str(max_retry), end='\r', flush=True)
+                if debug is False:
+                    print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' +
+                          str(max_retry), end='\r', flush=True)
+                else:
+                    print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' +
+                          str(max_retry))
 
             # restart download
             download_handler(_href=_href, _save_path=_save_path, _str_filesize=_str_filesize, _filesize=_filesize,
@@ -970,7 +978,7 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('   [--research]      [Specify research query]')
     print('                     [This argument MUST be specified last]')
     print('')
-    print(' [OPTIONS]')
+    print(' [DEBUG]')
     print('')
     print('   [--debug]         [Enables debug mode]')
     print('')
