@@ -467,6 +467,7 @@ def rem_dl_id(book_id):
 def enumerate_ids(_search_q=str, _search_mode='title'):
     """ Used to measure multiple instances/types of progress during download and returns all ids for search query """
 
+    global debug
     _page_max = 0
     _i_page_ = 1
     _total_books = 0
@@ -486,10 +487,10 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
                 _total_books += int(len(ids))
 
         except Exception as e:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
-            char_limit = int(len(str(e))) + 9 + int(len(str(get_dt())))
+            if debug is True:
+                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+                char_limit = int(len(str(e))) + 9 + int(len(str(get_dt())))
             time.sleep(5)
-            print(' ' * char_limit, end='\r', flush=True)
 
             # retry enumeration (connection issue also library genesis has a max con 50 clients)
             enumerate_ids(_search_q=_search_q)
@@ -519,7 +520,7 @@ def lookup_ids(_search_q=str, _ids_=[]):
 
     except Exception as e:
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
         time.sleep(5)
         lookup_ids(_search_q=_search_q, _ids_=_ids_)
@@ -535,7 +536,7 @@ def get_request(_href=str):
         return r
     except Exception as e:
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
         time.sleep(5)
         get_request(_href=_href)
@@ -578,14 +579,14 @@ def download_cover(_save_path=str, _url=str):
             _download_finished = True
         except Exception as e:
             if debug is True:
-                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
                 print('')
             _download_finished = False
         try:
             r.release_conn()
         except Exception as e:
             if debug is True:
-                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
                 print('')
             pass
     if _download_finished is True:
@@ -627,13 +628,13 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
     except Exception as e:
         clear_console_line(char_limit=100)
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
     try:
         r.release_conn()
     except Exception as e:
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
         pass
     return dl_sz, _data
@@ -720,7 +721,7 @@ def get_soup(_md5=str):
         soup = BeautifulSoup(data, "html.parser")
     except Exception as e:
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
         time.sleep(5)
         get_soup(_md5=_md5)
@@ -899,7 +900,7 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
 
         except Exception as e:
             if debug is True:
-                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
                 print('')
             time.sleep(5)
             download_main(_search_q=_search_q, _f_dir=_f_dir, _lookup_ids=_lookup_ids, _page_max=_page_max,
