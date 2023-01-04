@@ -120,6 +120,7 @@ total_books = int()
 verbosity = False
 bool_no_cover = False
 start_page = False
+bool_failed_once = False
 book_id_store = []
 dl_id_store = []
 no_ext = []
@@ -539,7 +540,7 @@ def compile_ids(search_q, i_page):
         ensure_library_path()
         if not os.path.exists(f_dir):
             os.mkdir(f_dir)
-        download_handler(search_q, f_dir, lookup_ids)
+        download_main(search_q, f_dir, lookup_ids)
 
 
 def download_cover(_save_path=str, _url=str):
@@ -571,12 +572,13 @@ def download_cover(_save_path=str, _url=str):
 
 def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
     """ downloader """
-    # todo: refine/reduce/simplify. write once at the end OR get fsize in bytes and skip through reading until r.read==
+    # todo: refine, write once
     global max_retry, max_retry_i, limit_speed
     if dl_id_check(book_id=_book_id, check_type='memory') is False:
         add_dl_id(book_id=_book_id)
     dl_sz = 0
-    with open(_filesize, 'wb') as out:
+    open(_save_path, 'w').close()
+    with open(_save_path, 'wb') as out:
         try:
             http = urllib3.PoolManager(retries=retries)
             r = http.request('GET', _href, preload_content=False, headers=headers)
@@ -611,10 +613,10 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
     return dl_sz
 
 
-def dl(_href=str, _save_path=str, _str_filesize=str, _filesize=int, _title=str, _author=str, _year=str, _book_id=str):
+def download_handler(_href=str, _save_path=str, _str_filesize=str, _filesize=int, _title=str, _author=str, _year=str, _book_id=str):
     """ attempts to download a book with n retries according to --retry-max """
     # todo: refine
-    global max_retry, max_retry_i, limit_speed
+    global max_retry, max_retry_i, limit_speed, bool_failed_once
 
     _download = download(_href=_href, _save_path=_save_path, _filesize=_filesize, _book_id=_book_id)
 
@@ -627,16 +629,25 @@ def dl(_href=str, _save_path=str, _str_filesize=str, _filesize=int, _title=str, 
             add_book_id(_book_id)
     else:
         clear_console_line(char_limit=100)
-        print(get_dt() + '[' + color(s='DOWNLOAD FAILED', c='R') + ']', end='\r', flush=True)
+        if bool_failed_once is False:
+            print(get_dt() + '[' + color(s='DOWNLOAD FAILED', c='R') + ']')
+        bool_failed_once = True
         time.sleep(3)
 
         max_retry_i += 1
         if max_retry_i < max_retry or max_retry == int(0):
             clear_console_line(char_limit=100)
-            print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' + str(max_retry), end='\r', flush=True)
+            if max_retry == int(0):
+                print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' +
+                      str('(unlimited)'), end='\r', flush=True)
+            else:
+                print(get_dt() + '[' + color(s='RETRYING', c='Y') + '] ' + str(max_retry_i) + ' / ' +
+                      str(max_retry), end='\r', flush=True)
             time.sleep(3)
-            dl(_href=_href, _save_path=_save_path, _str_filesize=_str_filesize, _filesize=_filesize, _title=_title,
-               _author=_author, _year=_year, _book_id=_book_id)
+            download_handler(_href=_href, _save_path=_save_path, _str_filesize=_str_filesize, _filesize=_filesize,
+                             _title=_title, _author=_author, _year=_year, _book_id=_book_id)
+
+    bool_failed_once = False
 
 
 def get_book_details(id=str):
@@ -729,7 +740,7 @@ def display_book_details(_i_page=int, _page_max=int, _i_progress=int, _ids_=[], 
     print(get_dt() + '[FILE SIZE] ' + str(convert_bytes(int(_filesize))))
 
 
-def download_handler(search_q, f_dir, lookup_ids):
+def download_main(search_q, f_dir, lookup_ids):
     """ obtains book details using book id and calls dl function if certain conditions are met """
     # todo: simplify/reduce function size
 
@@ -803,12 +814,12 @@ def download_handler(search_q, f_dir, lookup_ids):
                     if allow_dl is True:
                         """ download book and write """
                         try:
-                            dl(href, save_path, str_filesize, filesize, title, author, year, book_id)
+                            download_handler(href, save_path, str_filesize, filesize, title, author, year, book_id)
                         except Exception as e:
                             # todo: expand handling
                             print(get_dt() + str(e))
                             # failed.append([title, author, year, href])
-                            download_handler(search_q, f_dir, lookup_ids)
+                            download_main(search_q, f_dir, lookup_ids)
 
                     else:
                         """ Block to preserve existing file with the same name that is also not mentioned in dl_id """
@@ -823,7 +834,7 @@ def download_handler(search_q, f_dir, lookup_ids):
         except Exception as e:
             # todo: expand handling
             print(get_dt() + str(e))
-            download_handler(search_q, f_dir, lookup_ids)
+            download_main(search_q, f_dir, lookup_ids)
 
     if i_skipped > 0:
         # todo: separate from 'downloaded successfully'
