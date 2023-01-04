@@ -486,10 +486,10 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
                 _total_books += int(len(ids))
 
         except Exception as e:
-            print(' ' + str(e), end='\r', flush=True)
-            char_limit = int(len(str(e)))+1
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            char_limit = int(len(str(e))) + 9 + int(len(str(get_dt())))
             time.sleep(5)
-            print(' '*char_limit, end='\r', flush=True)
+            print(' ' * char_limit, end='\r', flush=True)
 
             # retry enumeration (connection issue also library genesis has a max con 50 clients)
             enumerate_ids(_search_q=_search_q)
@@ -510,7 +510,6 @@ def lookup_ids(_search_q=str, _ids_=[]):
     """ lookup n ids (prevents overloading lookup request) """
 
     global debug
-
     try:
         library_ = Library()
         ids_lookup = _ids_
@@ -520,18 +519,26 @@ def lookup_ids(_search_q=str, _ids_=[]):
 
     except Exception as e:
         if debug is True:
-            print(' ' + str(e), end='\r', flush=True)
-            char_limit = int(len(str(e))) + 1
-            time.sleep(5)
-            print(' ' * char_limit, end='\r', flush=True)
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print('')
         time.sleep(5)
         lookup_ids(_search_q=_search_q, _ids_=_ids_)
 
 
 def get_request(_href=str):
     """ posts GET request """
-    http = urllib3.PoolManager(retries=retries)
-    return http.request('GET', _href, preload_content=False, headers=headers)
+
+    global debug
+    try:
+        http = urllib3.PoolManager(retries=retries)
+        r = http.request('GET', _href, preload_content=False, headers=headers)
+        return r
+    except Exception as e:
+        if debug is True:
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print('')
+        time.sleep(5)
+        get_request(_href=_href)
 
 
 def save_download(_save_path=str, _data=bytes, _filesize=int, _mode=''):
@@ -571,19 +578,15 @@ def download_cover(_save_path=str, _url=str):
             _download_finished = True
         except Exception as e:
             if debug is True:
-                print(' ' + str(e), end='\r', flush=True)
-                char_limit = int(len(str(e))) + 1
-                time.sleep(5)
-                print(' ' * char_limit, end='\r', flush=True)
+                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+                print('')
             _download_finished = False
         try:
             r.release_conn()
         except Exception as e:
             if debug is True:
-                print(' ' + str(e), end='\r', flush=True)
-                char_limit = int(len(str(e))) + 1
-                time.sleep(5)
-                print(' ' * char_limit, end='\r', flush=True)
+                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+                print('')
             pass
     if _download_finished is True:
         save_download(_save_path=_save_path, _data=_data)
@@ -624,16 +627,14 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
     except Exception as e:
         clear_console_line(char_limit=100)
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + ']' + str(e), end='\r', flush=True)
-        time.sleep(5)
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print('')
     try:
         r.release_conn()
     except Exception as e:
         if debug is True:
-            print(' ' + str(e), end='\r', flush=True)
-            char_limit = int(len(str(e))) + 1
-            time.sleep(5)
-            print(' ' * char_limit, end='\r', flush=True)
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print('')
         pass
     return dl_sz, _data
 
@@ -711,10 +712,18 @@ def get_book_details(_id=str):
 def get_soup(_md5=str):
     """ return soup """
 
-    url = ('http://library.lol/main/' + str(_md5))
-    rHead = requests.get(url)
-    data = rHead.text
-    soup = BeautifulSoup(data, "html.parser")
+    global debug
+    try:
+        url = ('http://library.lol/main/' + str(_md5))
+        rHead = requests.get(url)
+        data = rHead.text
+        soup = BeautifulSoup(data, "html.parser")
+    except Exception as e:
+        if debug is True:
+            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+            print('')
+        time.sleep(5)
+        get_soup(_md5=_md5)
     return soup
 
 
@@ -863,10 +872,11 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
                                                      _title=title, _author=author, _year=year, _book_id=book_id)
                                 except Exception as e:
                                     if debug is True:
-                                        print(' ' + str(e), end='\r', flush=True)
-                                        char_limit = int(len(str(e))) + 1
-                                        time.sleep(5)
-                                        print(' ' * char_limit, end='\r', flush=True)
+                                        print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'),
+                                              end='\r',
+                                              flush=True)
+                                        print('')
+                                    time.sleep(5)
                                     download_main(_search_q=_search_q, _f_dir=_f_dir, _lookup_ids=_lookup_ids,
                                                   _page_max=_page_max, _i_progress=_i_progress)
 
@@ -889,10 +899,9 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
 
         except Exception as e:
             if debug is True:
-                print(' ' + str(e), end='\r', flush=True)
-                char_limit = int(len(str(e))) + 1
-                time.sleep(5)
-                print(' ' * char_limit, end='\r', flush=True)
+                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'), end='\r', flush=True)
+                print('')
+            time.sleep(5)
             download_main(_search_q=_search_q, _f_dir=_f_dir, _lookup_ids=_lookup_ids, _page_max=_page_max,
                           _i_progress=_i_progress)
 
@@ -981,10 +990,14 @@ search_mode = ''
 print('')
 print('_' * 88)
 print('')
+if '--debug' in sys.argv:
+    debug = True
 if '--download-mode' in sys.argv and not '-u' in sys.argv:
     print(' [LIBRARY GENESIS EXE]')
     print('')
     print(' [MODE] Download')
+    print(' [' + color(s='DEBUG ENABLED', c='R') + ']')
+    print('')
     i = 0
     run_function = 0
     for _ in sys.argv:
