@@ -47,8 +47,29 @@ f_dl_id = './data/dl_id.txt'
 f_book_id = './data/book_id.txt'
 d_library_genesis = './library_genesis'
 
+# set and initiate
+run_function = 1984
+max_retry = 3
+max_retry_i = 0
+i_page = 1
+limit_speed = 1024
+threads = 4
+i_char_progress = 0
+bool_no_cover = False
+bool_failed_once = False
+_throttle = False
+debug = False
+book_id_store = []
+dl_id_store = []
+
 
 def ensure_data_paths():
+
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (ensure_data_paths)', c='Y') + ']')
+
     if not os.path.exists('./data/'):
         os.mkdir('./data')
     if not os.path.exists(f_dl_id):
@@ -58,16 +79,31 @@ def ensure_data_paths():
 
 
 def ensure_research_paths():
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (ensure_research_paths)', c='Y') + ']')
+
     if not os.path.exists('./research'):
         os.mkdir('./research')
 
 
 def ensure_tmp_paths():
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (ensure_tmp_paths)', c='Y') + ']')
+
     if not os.path.exists('./tmp'):
         os.mkdir('./tmp')
 
 
 def ensure_library_path():
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (ensure_library_path)', c='Y') + ']')
+
     if not os.path.exists(d_library_genesis):
         os.mkdir(d_library_genesis)
 
@@ -90,7 +126,8 @@ socket.setdefaulttimeout(15)
 colorama.init()
 
 # set default backoff time in module
-retries = urllib3.Retry(total=None).DEFAULT_BACKOFF_MAX = 10
+urllib3.Retry.DEFAULT_BACKOFF_MAX = 10
+retries = urllib3.Retry(total=None, connect=1, backoff_factor=0.5)
 
 # set pyprogress factor in module
 multiplier = pyprogress.multiplier_from_inverse_factor(factor=50)
@@ -104,21 +141,6 @@ headers = {
     'Accept-Encoding': 'text/plain',
     'Accept-Language': 'en-US,en;q=0.9'
     }
-
-# set and initiate
-run_function = 1984
-max_retry = 3
-max_retry_i = 0
-i_page = 1
-limit_speed = 1024
-threads = 4
-i_char_progress = 0
-bool_no_cover = False
-bool_failed_once = False
-_throttle = False
-debug = False
-book_id_store = []
-dl_id_store = []
 
 
 def color(s=str, c=str):
@@ -384,6 +406,11 @@ def book_id_check(book_id, check_type):
     """ check if book id in file/memory """
 
     global book_id_store
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (book_id_check)', c='Y') + ']')
+
     ensure_data_paths()
     bool_book_id_check = False
     if check_type == 'read-file':
@@ -403,6 +430,11 @@ def add_book_id(book_id):
     """ add book id to file and list in memory """
 
     global book_id_store
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (add_book_id)', c='Y') + ']')
+
     ensure_data_paths()
     with open(f_book_id, 'a') as fo:
         fo.write(str(book_id) + '\n')
@@ -415,6 +447,11 @@ def dl_id_check(book_id=str, check_type=str):
     """ check if book id in download file  """
 
     global dl_id_store
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (dl_id_check)', c='Y') + ']')
+
     ensure_data_paths()
     bool_dl_id_check = False
     if check_type == 'read-file':
@@ -436,6 +473,11 @@ def add_dl_id(book_id):
     """" add book id to download file """
 
     global dl_id_store
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (add_dl_id)', c='Y') + ']')
+
     ensure_data_paths()
     with codecs.open(f_dl_id, 'a', encoding='utf8') as fo:
         fo.write(book_id + '\n')
@@ -447,6 +489,11 @@ def rem_dl_id(book_id):
     """" remove book id from download file """
 
     global dl_id_store
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (rem_dl_id)', c='Y') + ']')
+
     ensure_data_paths()
     new = []
     with open(f_dl_id, 'r') as fo:
@@ -468,7 +515,11 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
     """ Used to measure multiple instances/types of progress during download and returns all ids for search query """
 
     global debug
-    _page_max = 0
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (enumerate_ids)', c='Y') + ']')
+        print('')
+
     _i_page_ = 1
     _total_books = 0
     _all_pages_ids = []
@@ -482,13 +533,11 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
             print(get_dt() + '[SEARCHING] [PAGE] [' + str(_i_page_-1) + ']', end='\r', flush=True)
             if ids:
                 _all_pages_ids.append(ids)
-                _page_max += 1
-                _i_page_ += 1
                 _total_books += int(len(ids))
 
         except Exception as e:
             if debug is True:
-                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+                print(get_dt() + '[' + color(s='ERROR (enumerate_ids.search)', c='R') + '] ' + color(s=str(e), c='R'))
             time.sleep(5)
 
             # retry enumeration (connection issue also library genesis has a max con 50 clients)
@@ -497,29 +546,46 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
         # stop adding pages (no more pages)
         if not ids:
             print('')
+            _i_page_ -= 1
             add_page = False
+
+        else:
+            _i_page_ += 1
 
         # wait between each search to try and be more server friendly
         time.sleep(1)
 
     _total_books = int(_total_books)
-    return _all_pages_ids, _page_max, _total_books
+    return _all_pages_ids, _i_page_, _total_books
 
 
 def lookup_ids(_search_q=str, _ids_=[]):
     """ lookup n ids (prevents overloading lookup request) """
 
     global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (lookup_ids)', c='Y') + ']')
+        print('')
+
     try:
         library_ = Library()
+    except Exception as e:
+        if debug is True:
+            print(get_dt() + '[' + color(s='ERROR (lookup_ids.Library)', c='R') + '] ' + color(s=str(e), c='R'))
+            print('')
+        time.sleep(5)
+        lookup_ids(_search_q=_search_q, _ids_=_ids_)
+
+    try:
         ids_lookup = _ids_
-        _lookup_ids_ = library_.lookup(ids_lookup)
+        _lookup_ids_ = library_.lookup(ids_lookup, per_page=100)
         if _lookup_ids_:
             return _lookup_ids_
 
     except Exception as e:
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+            print(get_dt() + '[' + color(s='ERROR (lookup_ids.lookup)', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
         time.sleep(5)
         lookup_ids(_search_q=_search_q, _ids_=_ids_)
@@ -529,20 +595,31 @@ def get_request(_href=str):
     """ posts GET request """
 
     global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (get_request)', c='Y') + ']')
+        print('')
+
     try:
         http = urllib3.PoolManager(retries=retries)
         r = http.request('GET', _href, preload_content=False, headers=headers)
         return r
     except Exception as e:
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+            print(get_dt() + '[' + color(s='ERROR (get_request)', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
-        time.sleep(5)
+        time.sleep(1)
         get_request(_href=_href)
 
 
 def save_download(_save_path=str, _data=bytes, _filesize=int, _mode=''):
     """ writes bytes to file """
+
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (save_download)', c='Y') + ']')
+        print('')
 
     dl_complete = False
     open(_save_path, 'w').close()
@@ -562,6 +639,10 @@ def download_cover(_save_path=str, _url=str):
     global limit_speed, _throttle
     global debug
 
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (download_cover)', c='Y') + ']')
+        print('')
+
     _download_finished = False
     _data = bytes()
     if not os.path.exists(_save_path):
@@ -578,14 +659,15 @@ def download_cover(_save_path=str, _url=str):
             _download_finished = True
         except Exception as e:
             if debug is True:
-                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+                print(get_dt() + '[' + color(s='ERROR (download_cover.get_request)', c='R') + '] ' + color(s=str(e), c='R'))
                 print('')
             _download_finished = False
         try:
-            r.release_conn()
+            if r:
+                r.release_conn()
         except Exception as e:
             if debug is True:
-                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+                print(get_dt() + '[' + color(s='ERROR (download_cover.release_conn)', c='R') + '] ' + color(s=str(e), c='R'))
                 print('')
             pass
     if _download_finished is True:
@@ -608,6 +690,10 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
     global max_retry, max_retry_i, limit_speed, _throttle
     global debug
 
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (download)', c='Y') + ']')
+        print('')
+
     if dl_id_check(book_id=_book_id, check_type='memory') is False:
         add_dl_id(book_id=_book_id)
     dl_sz = int(0)
@@ -627,13 +713,14 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
     except Exception as e:
         clear_console_line(char_limit=100)
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+            print(get_dt() + '[' + color(s='ERROR (download.get_request)', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
     try:
-        r.release_conn()
+        if r:
+            r.release_conn()
     except Exception as e:
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+            print(get_dt() + '[' + color(s='ERROR (download.release_conn)', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
         pass
     return dl_sz, _data
@@ -643,7 +730,11 @@ def download_handler(_href=str, _save_path=str, _str_filesize=str, _filesize=int
                      _book_id=str):
     """ attempts to download a book with n retries according to --retry-max """
 
-    global max_retry, max_retry_i, limit_speed, bool_failed_once
+    global max_retry, max_retry_i, limit_speed, bool_failed_once, debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (download_handler)', c='Y') + ']')
+        print('')
 
     # handle attempt download
     dl_sz, _data = download(_href=_href, _save_path=_save_path, _filesize=_filesize, _book_id=_book_id)
@@ -703,6 +794,12 @@ def download_handler(_href=str, _save_path=str, _str_filesize=str, _filesize=int
 def get_book_details(_id=str):
     """ use book ID to return book details """
 
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (get_book_details)', c='Y') + ']')
+        print('')
+
     title = _id.title.strip()
     author = _id.author.strip()
     year = _id.year.strip()
@@ -721,6 +818,11 @@ def get_soup(_md5=str):
     """ return soup """
 
     global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (get_soup)', c='Y') + ']')
+        print('')
+
     try:
         url = ('http://library.lol/main/' + str(_md5))
         rHead = requests.get(url)
@@ -728,7 +830,7 @@ def get_soup(_md5=str):
         soup = BeautifulSoup(data, "html.parser")
     except Exception as e:
         if debug is True:
-            print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+            print(get_dt() + '[' + color(s='ERROR (get_soup)', c='R') + '] ' + color(s=str(e), c='R'))
             print('')
         time.sleep(5)
         get_soup(_md5=_md5)
@@ -737,6 +839,12 @@ def get_soup(_md5=str):
 
 def get_extension(_soup=[]):
     """ return file extension from soup """
+
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (get_extension)', c='Y') + ']')
+        print('')
 
     href = ''
     ext = ''
@@ -757,6 +865,12 @@ def get_cover_href(_soup=[]):
     """ return image url from soup """
 
     global bool_no_cover
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (get_cover_href)', c='Y') + ']')
+        print('')
+
     img_ = ''
     for link in _soup.find_all('img'):
         src = (link.get('src'))
@@ -769,6 +883,12 @@ def get_cover_href(_soup=[]):
 
 def make_filenames(_f_dir=str, _ext=str, _title=str, _author=str, _year=str, _book_id=str):
     """ create a Windows safe filename """
+
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (make_filenames)', c='Y') + ']')
+        print('')
 
     save_path = ''
     save_path_img = ''
@@ -788,6 +908,12 @@ def make_filenames(_f_dir=str, _ext=str, _title=str, _author=str, _year=str, _bo
 
 
 def display_book_details(_i_page=int, _page_max=int, _i_progress=int, _total_books=int, _search_q=str, _book_id=str, _title=str, _author=str, _year=str, _filesize=str):
+    global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (display_book_details)', c='Y') + ']')
+        print('')
+
     print(get_dt() + '[PAGE] ' + color(s=str(_i_page), c='LC') + ' / ' + color(s=str(_page_max), c='LC'))
     print(get_dt() + '[PROGRESS] ' + color(s=str(_i_progress), c='LC') + ' / ' + color(s=str(_total_books), c='LC'))
     print(get_dt() + '[KEYWORD] ' + str(_search_q))
@@ -804,6 +930,10 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
 
     global max_retry_i, bool_no_cover, i_page
     global debug
+
+    if debug is True:
+        print(get_dt() + '[' + color(s='Plugged-In (download_main)', c='Y') + ']')
+        print('')
 
     sub_i_progress = int(0)
     i_skipped = 0
@@ -880,7 +1010,8 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
                                                      _title=title, _author=author, _year=year, _book_id=book_id)
                                 except Exception as e:
                                     if debug is True:
-                                        print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'),
+                                        print(get_dt() + '[' + color(s='ERROR (download_main.download_handler)', c='R')
+                                              + '] ' + color(s=str(e), c='R'),
                                               end='\r',
                                               flush=True)
                                         print('')
@@ -907,7 +1038,7 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
 
         except Exception as e:
             if debug is True:
-                print(get_dt() + '[' + color(s='ERROR', c='R') + '] ' + color(s=str(e), c='R'))
+                print(get_dt() + '[' + color(s='ERROR (download_main.download_handler)', c='R') + '] ' + color(s=str(e), c='R'))
                 print('')
             time.sleep(5)
             download_main(_search_q=_search_q, _f_dir=_f_dir, _lookup_ids=_lookup_ids, _page_max=_page_max,
@@ -1129,6 +1260,11 @@ if run_function == 0:
         all_pages_ids, page_max, total_books = enumerate_ids(_search_q=search_q, _search_mode=search_mode)
         print(get_dt() + '[PAGES] [' + str(page_max) + ']')
 
+        f_dir = d_library_genesis + '/' + search_q + '/'
+        ensure_library_path()
+        if not os.path.exists(f_dir):
+            os.mkdir(f_dir)
+
         if all_pages_ids:
             if i_page <= page_max:
                 if i_page > 1:
@@ -1139,17 +1275,13 @@ if run_function == 0:
                         # print(get_dt() + '[PAGE] [' + str(_i_page) + ']')
                         if _i_page >= i_page:
                             _lookup_ids = lookup_ids(_search_q=search_q, _ids_=_)
-                            f_dir = d_library_genesis + '/' + search_q + '/'
-                            ensure_library_path()
-                            if not os.path.exists(f_dir):
-                                os.mkdir(f_dir)
                             download_main(_search_q=search_q, _f_dir=f_dir, _lookup_ids=_lookup_ids, _page_max=page_max,
                                           _total_books=total_books)
                             i_page += 1
                         _i_page += 1
             elif i_page > page_max:
                 print(get_dt() + '[PAGE] [' + str(i_page) + '] [EXCEEDS PAGE MAX]')
-        summary()
+            summary()
     else:
         print(get_dt() + '[PAGE] [' + str(i_page) + '] [DOES NOT EXIST]')
 
