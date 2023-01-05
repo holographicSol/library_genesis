@@ -59,15 +59,17 @@ bool_no_cover = False
 bool_failed_once = False
 _throttle = False
 debug = False
+debug_level_2 = False
+debug_level_3 = False
 book_id_store = []
 dl_id_store = []
 
 
 def ensure_data_paths():
 
-    global debug
+    global debug_level_3
 
-    if debug is True:
+    if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (ensure_data_paths)', c='Y') + ']')
 
     if not os.path.exists('./data/'):
@@ -79,9 +81,9 @@ def ensure_data_paths():
 
 
 def ensure_research_paths():
-    global debug
+    global debug_level_3
 
-    if debug is True:
+    if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (ensure_research_paths)', c='Y') + ']')
 
     if not os.path.exists('./research'):
@@ -89,9 +91,9 @@ def ensure_research_paths():
 
 
 def ensure_tmp_paths():
-    global debug
+    global debug_level_3
 
-    if debug is True:
+    if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (ensure_tmp_paths)', c='Y') + ']')
 
     if not os.path.exists('./tmp'):
@@ -99,9 +101,9 @@ def ensure_tmp_paths():
 
 
 def ensure_library_path():
-    global debug
+    global debug_level_3
 
-    if debug is True:
+    if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (ensure_library_path)', c='Y') + ']')
 
     if not os.path.exists(d_library_genesis):
@@ -406,14 +408,14 @@ def book_id_check(book_id, check_type):
     """ check if book id in file/memory """
 
     global book_id_store
-    global debug
+    global debug_level_3
 
-    if debug is True:
+    if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (book_id_check)', c='Y') + ']')
 
-    ensure_data_paths()
     bool_book_id_check = False
     if check_type == 'read-file':
+        ensure_data_paths()
         with open(f_book_id, 'r') as fo:
             for line in fo:
                 line = line.strip()
@@ -430,9 +432,9 @@ def add_book_id(book_id):
     """ add book id to file and list in memory """
 
     global book_id_store
-    global debug
+    global debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (add_book_id)', c='Y') + ']')
 
     ensure_data_paths()
@@ -447,14 +449,14 @@ def dl_id_check(book_id=str, check_type=str):
     """ check if book id in download file  """
 
     global dl_id_store
-    global debug
+    global debug_level_3
 
-    if debug is True:
+    if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (dl_id_check)', c='Y') + ']')
 
-    ensure_data_paths()
     bool_dl_id_check = False
     if check_type == 'read-file':
+        ensure_data_paths()
         if os.path.exists(f_dl_id):
             with codecs.open(f_dl_id, 'r', encoding='utf8') as fo:
                 for line in fo:
@@ -473,9 +475,9 @@ def add_dl_id(book_id):
     """" add book id to download file """
 
     global dl_id_store
-    global debug
+    global debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (add_dl_id)', c='Y') + ']')
 
     ensure_data_paths()
@@ -489,9 +491,9 @@ def rem_dl_id(book_id):
     """" remove book id from download file """
 
     global dl_id_store
-    global debug
+    global debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (rem_dl_id)', c='Y') + ']')
 
     ensure_data_paths()
@@ -514,9 +516,9 @@ def rem_dl_id(book_id):
 def enumerate_ids(_search_q=str, _search_mode='title'):
     """ Used to measure multiple instances/types of progress during download and returns all ids for search query """
 
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (enumerate_ids)', c='Y') + ']')
         print('')
 
@@ -562,9 +564,9 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
 def lookup_ids(_search_q=str, _ids_=[]):
     """ lookup n ids (prevents overloading lookup request) """
 
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (lookup_ids)', c='Y') + ']')
         print('')
 
@@ -594,9 +596,9 @@ def lookup_ids(_search_q=str, _ids_=[]):
 def get_request(_href=str):
     """ posts GET request """
 
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_request)', c='Y') + ']')
         print('')
 
@@ -615,9 +617,9 @@ def get_request(_href=str):
 def save_download(_save_path=str, _data=bytes, _filesize=int, _mode=''):
     """ writes bytes to file """
 
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (save_download)', c='Y') + ']')
         print('')
 
@@ -637,9 +639,9 @@ def save_download(_save_path=str, _data=bytes, _filesize=int, _mode=''):
 def download_cover(_save_path=str, _url=str):
     """ merge after dl refinement with a single download function """
     global limit_speed, _throttle
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (download_cover)', c='Y') + ']')
         print('')
 
@@ -688,9 +690,9 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
     """ downloader """
 
     global max_retry, max_retry_i, limit_speed, _throttle
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (download)', c='Y') + ']')
         print('')
 
@@ -794,9 +796,9 @@ def download_handler(_href=str, _save_path=str, _str_filesize=str, _filesize=int
 def get_book_details(_id=str):
     """ use book ID to return book details """
 
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_book_details)', c='Y') + ']')
         print('')
 
@@ -817,9 +819,9 @@ def get_book_details(_id=str):
 def get_soup(_md5=str):
     """ return soup """
 
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_soup)', c='Y') + ']')
         print('')
 
@@ -840,9 +842,9 @@ def get_soup(_md5=str):
 def get_extension(_soup=[]):
     """ return file extension from soup """
 
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_extension)', c='Y') + ']')
         print('')
 
@@ -865,9 +867,9 @@ def get_cover_href(_soup=[]):
     """ return image url from soup """
 
     global bool_no_cover
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_cover_href)', c='Y') + ']')
         print('')
 
@@ -884,9 +886,9 @@ def get_cover_href(_soup=[]):
 def make_filenames(_f_dir=str, _ext=str, _title=str, _author=str, _year=str, _book_id=str):
     """ create a Windows safe filename """
 
-    global debug
+    global debug, debug_level_3
 
-    if debug is True:
+    if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (make_filenames)', c='Y') + ']')
         print('')
 
@@ -908,9 +910,9 @@ def make_filenames(_f_dir=str, _ext=str, _title=str, _author=str, _year=str, _bo
 
 
 def display_book_details(_i_page=int, _page_max=int, _i_progress=int, _total_books=int, _search_q=str, _book_id=str, _title=str, _author=str, _year=str, _filesize=str):
-    global debug
+    global debug, debug_level_3
 
-    if debug is True:
+    if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (display_book_details)', c='Y') + ']')
         print('')
 
@@ -929,9 +931,9 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
     # todo: simplify/reduce function size
 
     global max_retry_i, bool_no_cover, i_page
-    global debug
+    global debug, debug_level_2
 
-    if debug is True:
+    if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (download_main)', c='Y') + ']')
         print('')
 
@@ -1135,6 +1137,14 @@ print('_' * 88)
 print('')
 if '--debug' in sys.argv:
     debug = True
+elif '--debug-level-2' in sys.argv:
+    debug = True
+    debug_level_2 = True
+elif '--debug-level-3' in sys.argv:
+    debug = True
+    debug_level_2 = True
+    debug_level_3 = True
+
 if '--download-mode' in sys.argv and not '-u' in sys.argv:
     print(' [LIBRARY GENESIS EXE]')
     print('')
