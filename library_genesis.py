@@ -520,7 +520,6 @@ def enumerate_ids(_search_q=str, _search_mode='title'):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (enumerate_ids)', c='Y') + ']')
-        print('')
 
     _i_page_ = 1
     _total_books = 0
@@ -568,14 +567,12 @@ def lookup_ids(_search_q=str, _ids_=[]):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (lookup_ids)', c='Y') + ']')
-        print('')
 
     try:
         library_ = Library()
     except Exception as e:
         if debug is True:
             print(get_dt() + '[' + color(s='ERROR (lookup_ids.Library)', c='R') + '] ' + color(s=str(e), c='R'))
-            print('')
         time.sleep(5)
         lookup_ids(_search_q=_search_q, _ids_=_ids_)
 
@@ -588,7 +585,6 @@ def lookup_ids(_search_q=str, _ids_=[]):
     except Exception as e:
         if debug is True:
             print(get_dt() + '[' + color(s='ERROR (lookup_ids.lookup)', c='R') + '] ' + color(s=str(e), c='R'))
-            print('')
         time.sleep(5)
         lookup_ids(_search_q=_search_q, _ids_=_ids_)
 
@@ -600,7 +596,6 @@ def get_request(_href=str):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_request)', c='Y') + ']')
-        print('')
 
     try:
         http = urllib3.PoolManager(retries=retries)
@@ -609,7 +604,6 @@ def get_request(_href=str):
     except Exception as e:
         if debug is True:
             print(get_dt() + '[' + color(s='ERROR (get_request)', c='R') + '] ' + color(s=str(e), c='R'))
-            print('')
         time.sleep(1)
         get_request(_href=_href)
 
@@ -621,7 +615,6 @@ def save_download(_save_path=str, _data=bytes, _filesize=int, _mode=''):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (save_download)', c='Y') + ']')
-        print('')
 
     dl_complete = False
     open(_save_path, 'w').close()
@@ -643,7 +636,6 @@ def download_cover(_save_path=str, _url=str):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (download_cover)', c='Y') + ']')
-        print('')
 
     _download_finished = False
     _data = bytes()
@@ -694,7 +686,6 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (download)', c='Y') + ']')
-        print('')
 
     if dl_id_check(book_id=_book_id, check_type='memory') is False:
         add_dl_id(book_id=_book_id)
@@ -800,7 +791,6 @@ def get_book_details(_id=str):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_book_details)', c='Y') + ']')
-        print('')
 
     title = _id.title.strip()
     author = _id.author.strip()
@@ -823,7 +813,6 @@ def get_soup(_md5=str):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_soup)', c='Y') + ']')
-        print('')
 
     try:
         url = ('http://library.lol/main/' + str(_md5))
@@ -846,7 +835,6 @@ def get_extension(_soup=[]):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_extension)', c='Y') + ']')
-        print('')
 
     href = ''
     ext = ''
@@ -871,7 +859,6 @@ def get_cover_href(_soup=[]):
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (get_cover_href)', c='Y') + ']')
-        print('')
 
     img_ = ''
     for link in _soup.find_all('img'):
@@ -890,7 +877,6 @@ def make_filenames(_f_dir=str, _ext=str, _title=str, _author=str, _year=str, _bo
 
     if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (make_filenames)', c='Y') + ']')
-        print('')
 
     save_path = ''
     save_path_img = ''
@@ -914,7 +900,6 @@ def display_book_details(_i_page=int, _page_max=int, _i_progress=int, _total_boo
 
     if debug_level_3 is True:
         print(get_dt() + '[' + color(s='Plugged-In (display_book_details)', c='Y') + ']')
-        print('')
 
     print(get_dt() + '[PAGE] ' + color(s=str(_i_page), c='LC') + ' / ' + color(s=str(_page_max), c='LC'))
     print(get_dt() + '[PROGRESS] ' + color(s=str(_i_progress), c='LC') + ' / ' + color(s=str(_total_books), c='LC'))
@@ -935,7 +920,6 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
 
     if debug_level_2 is True:
         print(get_dt() + '[' + color(s='Plugged-In (download_main)', c='Y') + ']')
-        print('')
 
     sub_i_progress = int(0)
     i_skipped = 0
@@ -1013,9 +997,7 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
                                 except Exception as e:
                                     if debug is True:
                                         print(get_dt() + '[' + color(s='ERROR (download_main.download_handler)', c='R')
-                                              + '] ' + color(s=str(e), c='R'),
-                                              end='\r',
-                                              flush=True)
+                                              + '] ' + color(s=str(e), c='R'))
                                         print('')
                                     time.sleep(5)
                                     download_main(_search_q=_search_q, _f_dir=_f_dir, _lookup_ids=_lookup_ids,
@@ -1041,7 +1023,6 @@ def download_main(_search_q=str, _f_dir=str, _lookup_ids=[], _page_max=int, _tot
         except Exception as e:
             if debug is True:
                 print(get_dt() + '[' + color(s='ERROR (download_main.download_handler)', c='R') + '] ' + color(s=str(e), c='R'))
-                print('')
             time.sleep(5)
             download_main(_search_q=_search_q, _f_dir=_f_dir, _lookup_ids=_lookup_ids, _page_max=_page_max,
                           _i_progress=_i_progress)
