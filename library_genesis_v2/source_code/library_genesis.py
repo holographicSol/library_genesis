@@ -210,10 +210,10 @@ for _ in sys.argv:
 # print(sys.argv)
 
 # debug
-i_page = 9
-search_q = 'C Programming'
-search_mode = 'title'
-debug_level = [True, True, False]
+# i_page = 9
+# search_q = 'C Programming'
+# search_mode = 'title'
+# debug_level = [True, True, False]
 
 # initialize
 library_genesis_downloader.book_id_check(book_id='', check_type='read-file')
