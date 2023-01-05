@@ -224,29 +224,29 @@ def main(_i_page=int, _search_q=str, _search_mode=str):
     while True:
         if _search_q:
             if _search_mode:
-                try:
+                # try:
 
-                    # perform multiple checks before handing over to the downloader
-                    bool_perform_checks, all_pages_ids, max_page, total_books = perform_checks(_i_page=_i_page,
-                                                                                               _search_q=_search_q,
-                                                                                               _search_mode=_search_mode)
-                    if bool_perform_checks is False:
-                        print(get_dt() + '[library_genesis_handler.main] [perform_checks] [' + color(s='FAILED', c='R') + ']')
+                # perform multiple checks before handing over to the downloader
+                bool_perform_checks, all_pages_ids, max_page, total_books = perform_checks(_i_page=_i_page,
+                                                                                           _search_q=_search_q,
+                                                                                           _search_mode=_search_mode)
+                if bool_perform_checks is False:
+                    print(get_dt() + '[library_genesis_handler.main] [perform_checks] [' + color(s='FAILED', c='R') + ']')
 
-                    elif bool_perform_checks is True:
-                        print(get_dt() + '[library_genesis_handler.main] [perform_checks] [' + color(s='PASSED', c='G') + ']')
+                elif bool_perform_checks is True:
+                    print(get_dt() + '[library_genesis_handler.main] [perform_checks] [' + color(s='PASSED', c='G') + ']')
 
-                        # start downloading
-                        download_progress_max = start_download_main(_all_pages_ids=all_pages_ids, _i_page=_i_page,
-                                                                    _search_q=_search_q,
-                                                                    _page_max=max_page,
-                                                                    _total_books=total_books)
-                        if download_progress_max is True:
-                            break
+                    # start downloading
+                    download_progress_max = start_download_main(_all_pages_ids=all_pages_ids, _i_page=_i_page,
+                                                                _search_q=_search_q,
+                                                                _page_max=max_page,
+                                                                _total_books=total_books)
+                    if download_progress_max is True:
+                        break
 
-                except Exception as e:
-                    if debug_level[0] is True:
-                        print(get_dt() + '[' + color(s='ERROR (library_genesis_handler.main)', c='R') + '] ' + color(s=str(e), c='R'))
+                # except Exception as e:
+                #     if debug_level[0] is True:
+                #         print(get_dt() + '[' + color(s='ERROR (library_genesis_handler.main)', c='R') + '] ' + color(s=str(e), c='R'))
             else:
                 print(get_dt() + '[' + color(s='MISSING (library_genesis_handler.main)', c='Y') + '] Specify search mode.')
                 break

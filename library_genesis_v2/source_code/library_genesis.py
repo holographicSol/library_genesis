@@ -103,9 +103,9 @@ if len(sys.argv) == 2 and sys.argv[1] == '-h':
     print('')
     print(' [DEBUG]')
     print('')
-    print('   [--debug]         [Enables debug mode]')
-    print('   [--debug-level-2] [Enables debug mode level 2. Verbose]')
-    print('   [--debug-level-3] [Enables debug mode level 3. More Verbose]')
+    print('   [--debug]         [Enables debug mode level 1. Show more errors]')
+    print('   [--debug-level-2] [Enables debug mode level 2. Increases debug verbosity]')
+    print('   [--debug-level-3] [Enables debug mode level 3. Further increases debug verbosity]')
     print('')
     print(' [EXAMPLES]')
     print('')
@@ -208,6 +208,12 @@ for _ in sys.argv:
     i += 1
 
 # print(sys.argv)
+
+# debug
+i_page = 9
+search_q = 'C Programming'
+search_mode = 'title'
+debug_level = [True, True, False]
 
 # initialize
 library_genesis_downloader.book_id_check(book_id='', check_type='read-file')

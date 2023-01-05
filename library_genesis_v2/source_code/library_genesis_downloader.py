@@ -271,6 +271,10 @@ def book_id_check(book_id, check_type):
                 line = line.strip()
                 if line not in book_id_store:
                     book_id_store.append(line)
+
+        if debug_level[1] is True:
+            print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.book_id_check) book_id_store:', c='Y') + str(len(book_id_store)) + ']')
+
         fo.close()
     elif check_type == 'memory':
         if book_id in book_id_store:
@@ -313,6 +317,9 @@ def dl_id_check(book_id=str, check_type=str):
                     line = line.strip()
                     if line not in dl_id_store:
                         dl_id_store.append(line)
+
+            if debug_level[1] is True:
+                print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.dl_id_check) dl_id_store:', c='Y') + str(len(dl_id_store)) + ']')
         else:
             print(get_dt() + '[DL_INDEX] is missing.')
     elif check_type == 'memory':
