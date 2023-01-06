@@ -43,6 +43,7 @@ import pyprogress
 
 f_dl_id = './data/dl_id.txt'
 f_book_id = './data/book_id.txt'
+skip_book_id = './data/skip_book_id.txt'
 d_library_genesis = './library_genesis'
 
 # set and initiate
@@ -57,6 +58,7 @@ _throttle = False
 bool_no_cover = False
 book_id_store = []
 dl_id_store = []
+skip_book_id_store = []
 debug_level = [False, False, False]
 
 
@@ -72,6 +74,8 @@ def ensure_data_paths():
         open(f_dl_id, 'w').close()
     if not os.path.exists(f_book_id):
         open(f_book_id, 'w').close()
+    if not os.path.exists(skip_book_id):
+        open(skip_book_id, 'w').close()
 
 
 def ensure_library_path():
@@ -254,6 +258,83 @@ def lookup_ids(_ids_=[]):
             print(get_dt() + '[' + color(s='ERROR (library_genesis_downloader.lookup_ids.lookup)', c='R') + '] ' + color(s=str(e), c='R'))
 
 
+def skip_book_id_check(book_id, check_type):
+    """ check if book id in file/memory """
+
+    global skip_book_id_store
+    global debug_level
+
+    if debug_level[2] is True:
+        print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.skip_book_id_check)', c='Y') + ']')
+
+    bool_skip_book_id_check = False
+    if check_type == 'read-file':
+        ensure_data_paths()
+        with open(skip_book_id, 'r') as fo:
+            for line in fo:
+                line = line.strip()
+                if line not in skip_book_id_store:
+                    skip_book_id_store.append(line)
+        fo.close()
+    elif check_type == 'memory':
+        if book_id in skip_book_id_store:
+            bool_skip_book_id_check = True
+
+    return bool_skip_book_id_check
+
+
+def add_skip_id(book_id):
+    """ add book id to file and list in memory """
+
+    global skip_book_id_store
+    global debug_level
+
+    if debug_level[1] is True:
+        print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.add_skip_id)', c='Y') + ']')
+
+    ensure_data_paths()
+    with open(skip_book_id, 'a') as fo:
+        fo.write(str(book_id) + '\n')
+    fo.close()
+
+    if book_id not in skip_book_id_store:
+        skip_book_id_store.append(book_id)
+
+    if debug_level[1] is True:
+        print(get_dt() + '[' + color(s='(library_genesis_downloader.add_skip_id) skip_book_id_store:', c='Y') +
+              str(len(skip_book_id_store)) + ']')
+
+
+def rem_skip_id(book_id):
+    """" remove book id from download file """
+
+    global skip_book_id_store
+    global debug_level
+
+    if debug_level[1] is True:
+        print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.rem_skip_id)', c='Y') + ']')
+
+    ensure_data_paths()
+    new = []
+    with open(skip_book_id, 'r') as fo:
+        for line in fo:
+            line = line.strip()
+            if line != book_id:
+                new.append(line)
+    fo.close()
+    with open(skip_book_id, 'w') as fo:
+        fo.close()
+    with open(skip_book_id, 'a') as fo:
+        for _ in new:
+            fo.write(_ + '\n')
+    fo.close()
+    skip_book_id_store.remove(book_id)
+
+    if debug_level[1] is True:
+        print(get_dt() + '[' + color(s='(library_genesis_downloader.rem_skip_id) skip_book_id_store:', c='Y') + str(
+            len(skip_book_id_store)) + ']')
+
+
 def book_id_check(book_id, check_type):
     """ check if book id in file/memory """
 
@@ -276,10 +357,6 @@ def book_id_check(book_id, check_type):
         if book_id in book_id_store:
             bool_book_id_check = True
 
-    if debug_level[1] is True:
-        print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.book_id_check) book_id_store:', c='Y') +
-              str(len(book_id_store)) + ']')
-
     return bool_book_id_check
 
 
@@ -300,7 +377,7 @@ def add_book_id(book_id):
         book_id_store.append(book_id)
 
     if debug_level[1] is True:
-        print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.add_book_id) book_id_store:', c='Y') +
+        print(get_dt() + '[' + color(s='(library_genesis_downloader.add_book_id) book_id_store:', c='Y') +
               str(len(book_id_store)) + ']')
 
 
@@ -328,10 +405,6 @@ def dl_id_check(book_id=str, check_type=str):
         if book_id in dl_id_store:
             bool_dl_id_check = True
 
-    if debug_level[1] is True:
-        print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.dl_id_check) dl_id_store:', c='Y') + str(
-            len(dl_id_store)) + ']')
-
     return bool_dl_id_check
 
 
@@ -351,7 +424,7 @@ def add_dl_id(book_id):
     dl_id_store.append(book_id)
 
     if debug_level[1] is True:
-        print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.add_dl_id) dl_id_store:', c='Y') + str(
+        print(get_dt() + '[' + color(s='(library_genesis_downloader.add_dl_id) dl_id_store:', c='Y') + str(
             len(dl_id_store)) + ']')
 
 
@@ -381,7 +454,7 @@ def rem_dl_id(book_id):
     dl_id_store.remove(book_id)
 
     if debug_level[1] is True:
-        print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.rem_dl_id) dl_id_store:', c='Y') + str(
+        print(get_dt() + '[' + color(s='(library_genesis_downloader.rem_dl_id) dl_id_store:', c='Y') + str(
             len(dl_id_store)) + ']')
 
 
@@ -497,12 +570,14 @@ def download(_href=str, _save_path=str, _filesize=int, _book_id=str):
                 break
     except Exception as e:
         if debug_level[0] is True:
+            print('')
             print(get_dt() + '[' + color(s='ERROR (library_genesis_downloader.download)', c='R') + '] ' + color(s=str(e), c='R'))
     try:
         if r:
             r.release_conn()
     except Exception as e:
         if debug_level[0] is True:
+            print('')
             print(get_dt() + '[' + color(s='ERROR (library_genesis_downloader.download)', c='R') + '] ' + color(s=str(e), c='R'))
 
         pass
@@ -699,6 +774,7 @@ def download_main(_search_q=str, _download_location=str, _lookup_ids=[], _page_m
     i_progress = 0
 
     for _ in _lookup_ids:
+
         i_progress += 1
         max_retry_i = 0
 
@@ -706,8 +782,9 @@ def download_main(_search_q=str, _download_location=str, _lookup_ids=[], _page_m
         book_id = _.id
         # print('book_id', book_id)
         bool_book_id_check = book_id_check(book_id=book_id, check_type='memory')
+        bool_skip_book_id_check = skip_book_id_check(book_id=book_id, check_type='memory')
 
-        if bool_book_id_check is False:
+        if bool_book_id_check is False and bool_skip_book_id_check is False:
 
             # uncomment to display entire dictionary
             # print(_.__dict__)
@@ -736,6 +813,8 @@ def download_main(_search_q=str, _download_location=str, _lookup_ids=[], _page_m
 
                 if ext:
                     # create filenames
+                    if not os.path.exists(_download_location):
+                        os.mkdir(_download_location)
                     save_path, save_path_img = make_filenames(_download_location=_download_location, _ext=ext, _title=title, _author=author,
                                                               _year=year, _book_id=book_id)
 
