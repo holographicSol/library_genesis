@@ -218,6 +218,7 @@ for _ in sys.argv:
 # initialize
 library_genesis_downloader.book_id_check(book_id='', check_type='read-file')
 library_genesis_downloader.dl_id_check(book_id='', check_type='read-file')
+library_genesis_downloader.skip_book_id_check(book_id='', check_type='read-file')
 library_genesis_downloader.debug_level = debug_level
 library_genesis_handler.debug_level = debug_level
 

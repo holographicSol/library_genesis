@@ -667,6 +667,7 @@ def get_soup(_md5=str):
     if debug_level[2] is True:
         print(get_dt() + '[' + color(s='Plugged-In (library_genesis_downloader.get_soup)', c='Y') + ']')
 
+    soup = []
     try:
         url = ('http://library.lol/main/' + str(_md5))
         rHead = requests.get(url)
@@ -675,6 +676,7 @@ def get_soup(_md5=str):
     except Exception as e:
         if debug_level[0] is True:
             print(get_dt() + '[' + color(s='ERROR (library_genesis_downloader.get_soup)', c='R') + '] ' + color(s=str(e), c='R'))
+
     return soup
 
 
