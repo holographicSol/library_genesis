@@ -199,7 +199,7 @@ def start_download_main(_all_pages_ids=[], _i_page=int,
         if int(i_progress) >= int(_i_page):
             print(get_dt() + '[STARTING PAGE]', i_progress)
             lookup_ids = library_genesis_downloader.lookup_ids(_ids_=_)
-            library_genesis_downloader.download_main(_i_page=_i_page,
+            library_genesis_downloader.download_main(_i_page=i_progress,
                                                      _search_q=_search_q,
                                                      _download_location=_download_location,
                                                      _lookup_ids=lookup_ids,
