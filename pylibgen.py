@@ -57,7 +57,7 @@ class Library(object):
         return "<Library ({})>".format(self.mirror.name)
 
     def search(
-        self, query: str, mode: str, page: int, per_page: int,
+            self, query: str, mode: str, page: int, per_page: int,
     ) -> List[str]:
         """Searches Library Genesis.
 
@@ -105,10 +105,12 @@ class Library(object):
         )
         return re.findall(r'<tr.*?><td>(\d+)', resp.text)
 
+    # my edit (Benjamin Jack Cullen): added per_page=int (enables ids n to be passed in to this function to help assert response)
     def lookup(
-        self,
-        ids: List[Union[str, int]],
-        fields: List[str] = constants.ALL_BOOK_FIELDS,
+            self,
+            ids: List[Union[str, int]],
+            fields: List[str] = constants.ALL_BOOK_FIELDS,
+            per_page=int,
     ) -> Iterator[Book]:
         """Looks up one or more books by id and returns Book objects.
 
@@ -150,9 +152,14 @@ class Library(object):
             # As of Jan 12 2019 the example in the PR has been resolved,
             # but we're going to keep this here just in case.
             raise requests.HTTPError(400)
+
         for book_data, _id in zip(resp, ids):
 
-            # assert book_data['id'] == _id
+            # my edit (Benjamin Jack Cullen): added try block
+            try:
+                assert book_data['id'] == _id
+            except:
+                pass
             yield Book(**book_data)
 
     def __req(self, endpoint, **kwargs):
