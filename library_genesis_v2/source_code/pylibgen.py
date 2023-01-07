@@ -153,20 +153,14 @@ class Library(object):
             # but we're going to keep this here just in case.
             raise requests.HTTPError(400)
 
-        # my edit (Benjamin Jack Cullen): add extra loose inspection of response
-        # print('[RESPONE]', resp)
-        # print('[len(RESPONSE)]', len(resp))
-        # print('[ids]', ids)
-        # print('[len(ids)]', len(ids))
-        if int(len(resp)) == int(per_page):
-            for book_data, _id in zip(resp, ids):
+        for book_data, _id in zip(resp, ids):
 
-                # edit: added try block
-                try:
-                    assert book_data['id'] == _id
-                except:
-                    pass
-                yield Book(**book_data)
+            # my edit (Benjamin Jack Cullen): added try block
+            try:
+                assert book_data['id'] == _id
+            except:
+                pass
+            yield Book(**book_data)
 
     def __req(self, endpoint, **kwargs):
         r = requests.get(endpoint.format(**constants.SEARCH_BASE_PARAMS, **kwargs))
