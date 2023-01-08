@@ -155,11 +155,9 @@ class Library(object):
 
         for book_data, _id in zip(resp, ids):
 
-            # my edit (Benjamin Jack Cullen): added try block
-            try:
-                assert book_data['id'] == _id
-            except:
-                pass
+            # my edit (Benjamin Jack Cullen): commented out assert (temporary)
+            # assert book_data['id'] == _id
+
             yield Book(**book_data)
 
     def __req(self, endpoint, **kwargs):
